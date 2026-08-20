@@ -1,0 +1,61 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() { 
+      return request.auth != null; 
+    }
+    
+    function isOwner(userId) { 
+      return isSignedIn() && request.auth.uid == userId; 
+    }
+    
+    function isAdmin() { 
+      return isSignedIn() && (
+        request.auth.token.email == 'max.kistner12@gmail.com' ||
+        (exists(/databases/$(database)/documents/users/$(request.auth.uid)) && (
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin' ||
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin' ||
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'owner' ||
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Owner'
+        ))
+      ); 
+    }
+
+    // User document & Admin user management
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin();
+      allow create: if isOwner(userId) || isAdmin();
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isAdmin();
+
+      // All user subcollections (timetable, homework, grades, subjects, config, substitutions)
+      match /{allSubcollections=**} {
+        allow read, write: if isOwner(userId) || isAdmin();
+      }
+    }
+
+    // School Templates Hub
+    match /school_templates/{templateId} {
+      allow read: if true;
+      allow create, update, delete: if isSignedIn();
+    }
+
+    // Registered Schools
+    match /registered_schools/{schoolId} {
+      allow read: if true;
+      allow create, update, delete: if isSignedIn();
+    }
+
+    // Schools alias
+    match /schools/{schoolId} {
+      allow read: if true;
+      allow create, update, delete: if isSignedIn();
+    }
+  }
+}
+

@@ -1,0 +1,63 @@
+{
+  "entities": {
+    "AuthUser": {
+      "title": "AuthUser",
+      "description": "User profile data",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "email": { "type": "string" },
+        "planType": { "type": "string", "enum": ["free", "premium"] },
+        "role": { "type": "string", "enum": ["admin", "user"] },
+        "banned": { "type": "boolean" },
+        "createdAt": { "type": "string" }
+      }
+    },
+    "UserConfig": {
+      "title": "UserConfig",
+      "description": "User specific configurations",
+      "type": "object",
+      "properties": {
+        "planType": { "type": "string", "enum": ["free", "premium"] },
+        "primaryColor": { "type": "string" },
+        "liveSyncIntervalSeconds": { "type": "number" },
+        "webhookUrl": { "type": "string" },
+        "notifyOnSubstitutions": { "type": "boolean" }
+      }
+    },
+    "TimetableEntry": {
+      "title": "TimetableEntry",
+      "description": "A single entry in the timetable",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "day": { "type": "string" },
+        "period": { "type": "number" },
+        "time": { "type": "string" },
+        "subject": { "type": "string" },
+        "teacher": { "type": "string" },
+        "room": { "type": "string" },
+        "targetClass": { "type": "string" },
+        "status": { "type": "string" },
+        "color": { "type": "string" },
+        "substituteTeacher": { "type": "string" },
+        "substituteRoom": { "type": "string" },
+        "note": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": { "$ref": "#/entities/AuthUser" },
+      "description": "User profiles"
+    },
+    "/users/{userId}/config/main": {
+      "schema": { "$ref": "#/entities/UserConfig" },
+      "description": "User configuration"
+    },
+    "/users/{userId}/timetable/{entryId}": {
+      "schema": { "$ref": "#/entities/TimetableEntry" },
+      "description": "Timetable entries for a user"
+    }
+  }
+}
