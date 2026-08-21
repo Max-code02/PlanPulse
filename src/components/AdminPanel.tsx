@@ -252,8 +252,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
 
   // Delete User
   const handleDeleteUser = async (user: AdminUserItem) => {
-    if (user.role === "admin" || user.email.toLowerCase() === "max.kistner12@gmail.com") {
-      onNotification("Admin-Accounts können nicht gelöscht werden!");
+    if (user.email.toLowerCase().trim() === "max.kistner12@gmail.com") {
+      onNotification("Der Haupt-Administrator (max.kistner12@gmail.com) kann nicht gelöscht werden!");
       return;
     }
 
@@ -266,11 +266,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         {
           method: "DELETE",
           headers,
+          body: JSON.stringify({ email: user.email }),
         }
       );
 
       if (res.ok && res.data?.success) {
-        onNotification(`Nutzer ${user.email} wurde gelöscht.`);
+        onNotification(`Nutzer ${user.email} wurde unwiderruflich gelöscht.`);
+        setUsers((prev) =>
+          prev.filter((u) => u.id !== user.id && u.email.toLowerCase().trim() !== user.email.toLowerCase().trim())
+        );
         loadAdminData();
       } else {
         onNotification(res.data?.error || res.error || "Fehler beim Löschen.");

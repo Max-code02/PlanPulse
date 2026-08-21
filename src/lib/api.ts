@@ -993,6 +993,22 @@ export async function safeFetchJson<T = any>(
 
           // DELETE /api/admin/users/:id
           if (targetUserId && method === "DELETE") {
+            const delIds = getLocalItem<string[]>("planpulse_deleted_user_ids", []);
+            if (!delIds.includes(targetUserId)) {
+              delIds.push(targetUserId);
+              setLocalItem("planpulse_deleted_user_ids", delIds);
+            }
+
+            // Also check if body passes target email
+            if (bodyObj?.email) {
+              const cleanE = bodyObj.email.toLowerCase().trim();
+              const delEmails = getLocalItem<string[]>("planpulse_deleted_user_emails", []);
+              if (cleanE !== "max.kistner12@gmail.com" && !delEmails.includes(cleanE)) {
+                delEmails.push(cleanE);
+                setLocalItem("planpulse_deleted_user_emails", delEmails);
+              }
+            }
+
             try {
               await deleteDoc(doc(db, "users", targetUserId));
             } catch {}
@@ -1011,56 +1027,6 @@ export async function safeFetchJson<T = any>(
                 createdAt: "Haupt-Administrator",
                 timetableCount: 15,
                 homeworkCount: 3,
-              },
-              {
-                id: "usr_seed_lehrer_mueller",
-                email: "lehrer.mueller@gymnasium-nord.de",
-                role: "user",
-                planType: "premium",
-                banned: false,
-                createdAt: "10.08.2026",
-                timetableCount: 24,
-                homeworkCount: 5,
-              },
-              {
-                id: "usr_seed_sophie_schneider",
-                email: "sophie.schneider@schule-digital.de",
-                role: "user",
-                planType: "premium",
-                banned: false,
-                createdAt: "14.08.2026",
-                timetableCount: 18,
-                homeworkCount: 2,
-              },
-              {
-                id: "usr_seed_felix_meier",
-                email: "felix.meier@gymnasium-sued.de",
-                role: "user",
-                planType: "premium",
-                banned: false,
-                createdAt: "16.08.2026",
-                timetableCount: 12,
-                homeworkCount: 1,
-              },
-              {
-                id: "usr_seed_stufenleiter_weber",
-                email: "stufenleiter.weber@schule.de",
-                role: "admin",
-                planType: "premium",
-                banned: false,
-                createdAt: "01.08.2026",
-                timetableCount: 30,
-                homeworkCount: 6,
-              },
-              {
-                id: "usr_1787217876950_4f7a9872",
-                email: "test@test.com",
-                role: "user",
-                planType: "premium",
-                banned: false,
-                createdAt: "20.08.2026",
-                timetableCount: 8,
-                homeworkCount: 0,
               },
             ];
 
@@ -1119,7 +1085,17 @@ export async function safeFetchJson<T = any>(
               }
             } catch {}
 
-            const usersList = Array.from(map.values());
+            const delIds = getLocalItem<string[]>("planpulse_deleted_user_ids", []);
+            const delEmails = getLocalItem<string[]>("planpulse_deleted_user_emails", []);
+
+            const usersList = Array.from(map.values()).filter((u) => {
+              const cleanE = (u.email || "").toLowerCase().trim();
+              if (cleanE === "max.kistner12@gmail.com") return true;
+              if (delIds.includes(u.id)) return false;
+              if (delEmails.includes(cleanE)) return false;
+              return true;
+            });
+
             return { ok: true, status: 200, data: { success: true, users: usersList } as any };
           }
         }

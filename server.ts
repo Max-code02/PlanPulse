@@ -175,6 +175,8 @@ export interface UserDataContainer {
 interface DatabaseSchema {
   users: StoredUser[];
   sessions: Record<string, string>; // token -> userId (persisted permanently on disk)
+  deletedUserEmails?: string[];
+  deletedUserIds?: string[];
   guestData: UserDataContainer;
   registeredSchools: RegisteredSchool[];
   schoolTemplates: SchoolPlanTemplate[];
@@ -226,6 +228,8 @@ function loadDatabase() {
       db = {
         users: Array.isArray(loaded.users) ? loaded.users : [],
         sessions: loaded.sessions && typeof loaded.sessions === "object" ? loaded.sessions : {},
+        deletedUserEmails: Array.isArray(loaded.deletedUserEmails) ? loaded.deletedUserEmails : [],
+        deletedUserIds: Array.isArray(loaded.deletedUserIds) ? loaded.deletedUserIds : [],
         guestData: loaded.guestData || {
           timetableEntries: [],
           homeworkItems: [],
@@ -310,69 +314,7 @@ function loadDatabase() {
         adminUser.banned = false;
         adminUser.planType = "premium";
       }
-
-      // Seed standard demo school user accounts if list has only admin
-      const sampleSeedUsers = [
-        {
-          id: "usr_seed_lehrer_mueller",
-          email: "lehrer.mueller@gymnasium-nord.de",
-          role: "user" as const,
-          planType: "premium" as const,
-          createdAt: "2026-08-10T09:15:00.000Z",
-          timetableCount: 18,
-          homeworkCount: 4,
-        },
-        {
-          id: "usr_seed_sophie_schneider",
-          email: "sophie.schneider@schule-digital.de",
-          role: "user" as const,
-          planType: "premium" as const,
-          createdAt: "2026-08-14T14:30:00.000Z",
-          timetableCount: 30,
-          homeworkCount: 6,
-        },
-        {
-          id: "usr_seed_felix_meier",
-          email: "felix.meier@gymnasium-sued.de",
-          role: "user" as const,
-          planType: "premium" as const,
-          createdAt: "2026-08-16T11:00:00.000Z",
-          timetableCount: 28,
-          homeworkCount: 3,
-        },
-        {
-          id: "usr_seed_stufenleiter_weber",
-          email: "stufenleiter.weber@schule.de",
-          role: "admin" as const,
-          planType: "premium" as const,
-          createdAt: "2026-08-01T08:00:00.000Z",
-          timetableCount: 34,
-          homeworkCount: 0,
-        },
-      ];
-
-      for (const sample of sampleSeedUsers) {
-        if (!db.users.some((u) => u.email.toLowerCase() === sample.email.toLowerCase())) {
-          const { hash, salt } = hashPassword("Schule2026!");
-          db.users.push({
-            id: sample.id,
-            email: sample.email,
-            passwordHash: hash,
-            salt,
-            planType: sample.planType,
-            role: sample.role,
-            banned: false,
-            createdAt: sample.createdAt,
-            timetableEntries: (db.guestData.timetableEntries || []).slice(0, sample.timetableCount),
-            homeworkItems: (db.guestData.homeworkItems || []).slice(0, sample.homeworkCount),
-            gradeEntries: db.guestData.gradeEntries || [],
-            userSubjects: db.guestData.userSubjects || [...DEFAULT_SUBJECTS],
-            customClasses: ["5a", "10b", "Q11"],
-            userConfig: { ...defaultUserConfig },
-          });
-        }
-      }
-
+      // No fake demo seed profiles are added.
       saveDatabase();
 
       // Populate memory cache from disk sessions
@@ -1454,26 +1396,37 @@ async function startServer() {
     }
 
     const { id } = req.params;
-    const targetUser = db.users.find((u) => u.id === id);
+    const targetUser = db.users.find((u) => u.id === id || u.email.toLowerCase().trim() === id.toLowerCase().trim());
     if (!targetUser) {
       return res.status(404).json({ error: "Benutzer nicht gefunden." });
     }
 
-    if (ADMIN_EMAILS.includes(targetUser.email.toLowerCase())) {
+    const cleanEmail = targetUser.email.toLowerCase().trim();
+    if (ADMIN_EMAILS.includes(cleanEmail)) {
       return res.status(400).json({ error: "Haupt-Administrator kann nicht gelöscht werden." });
     }
 
-    db.users = db.users.filter((u) => u.id !== id);
+    if (!db.deletedUserEmails) db.deletedUserEmails = [];
+    if (!db.deletedUserIds) db.deletedUserIds = [];
+
+    if (!db.deletedUserEmails.includes(cleanEmail)) {
+      db.deletedUserEmails.push(cleanEmail);
+    }
+    if (!db.deletedUserIds.includes(targetUser.id)) {
+      db.deletedUserIds.push(targetUser.id);
+    }
+
+    db.users = db.users.filter((u) => u.id !== targetUser.id && u.email.toLowerCase().trim() !== cleanEmail);
 
     for (const [token, uid] of activeSessions.entries()) {
-      if (uid === id) {
+      if (uid === targetUser.id) {
         activeSessions.delete(token);
         if (db.sessions) delete db.sessions[token];
       }
     }
 
     saveDatabase();
-    res.json({ success: true, message: `Nutzerkonto ${targetUser.email} gelöscht.` });
+    res.json({ success: true, message: `Nutzerkonto ${targetUser.email} wurde unwiderruflich gelöscht.` });
   });
 
   // Admin Endpoints: Stats
@@ -2197,175 +2150,7 @@ async function startServer() {
     res.json({ success: true, appliedCount: newEntries.length, totalEntries: data.timetableEntries.length });
   });
 
-  // ============================================================
-  // ADMIN API ENDPOINTS (/api/admin/users)
-  // ============================================================
-  app.get("/api/admin/users", (req, res) => {
-    try {
-      const userList = (db.users || []).map((u) => {
-        const uEmail = (u.email || "").toLowerCase().trim();
-        const isAdmin = uEmail === "max.kistner12@gmail.com" || u.role === "admin" || (u as any).role === "Admin" || (u as any).role === "owner";
-        return {
-          id: u.id,
-          email: u.email,
-          role: isAdmin ? "admin" : "user",
-          planType: u.planType || "premium",
-          banned: !!(u as any).banned,
-          createdAt: u.createdAt || "Registriert",
-          timetableCount: (u.timetableEntries || []).length,
-          homeworkCount: (u.homeworkItems || []).length,
-        };
-      });
 
-      // Ensure max.kistner12@gmail.com is present
-      const hasMax = userList.some((u) => u.email.toLowerCase().trim() === "max.kistner12@gmail.com");
-      if (!hasMax) {
-        userList.unshift({
-          id: "usr-admin-max",
-          email: "max.kistner12@gmail.com",
-          role: "admin",
-          planType: "premium",
-          banned: false,
-          createdAt: "Haupt-Administrator",
-          timetableCount: 15,
-          homeworkCount: 3,
-        });
-      }
-
-      res.json({ success: true, users: userList });
-    } catch (e: any) {
-      res.status(500).json({ error: e.message || "Fehler beim Laden der Benutzer." });
-    }
-  });
-
-  app.post("/api/admin/users/create", (req, res) => {
-    const { email, password, role } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ error: "E-Mail und Passwort erforderlich." });
-    }
-    const cleanEmail = email.toLowerCase().trim();
-    const existing = (db.users || []).find((u) => u.email.toLowerCase().trim() === cleanEmail);
-    if (existing) {
-      return res.status(400).json({ error: "Ein Benutzer mit dieser E-Mail existiert bereits." });
-    }
-
-    const salt = crypto.randomBytes(16).toString("hex");
-    const passwordHash = crypto.pbkdf2Sync(password, salt, 1000, 64, "sha512").toString("hex");
-    const newId = `usr_${Date.now()}_${crypto.randomBytes(4).toString("hex")}`;
-    const newUser: StoredUser = {
-      id: newId,
-      email: cleanEmail,
-      passwordHash,
-      salt,
-      planType: "premium",
-      role: role === "admin" || cleanEmail === "max.kistner12@gmail.com" ? "admin" : "user",
-      banned: false,
-      createdAt: new Date().toISOString(),
-      timetableEntries: [],
-      homeworkItems: [],
-      gradeEntries: [],
-      userSubjects: [],
-      customClasses: [],
-      userConfig: {
-        planType: "premium",
-        organizationName: "Gymnasium & Schule",
-        customLogoUrl: "",
-        primaryColor: "#2563eb",
-        showWatermark: false,
-        liveSyncIntervalSeconds: 0,
-        webhookUrl: "",
-        notifyOnSubstitutions: true,
-      },
-    };
-
-    if (!db.users) db.users = [];
-    db.users.push(newUser);
-    saveDatabase();
-
-    res.json({
-      success: true,
-      message: `Benutzer ${cleanEmail} erfolgreich angelegt!`,
-      user: {
-        id: newUser.id,
-        email: newUser.email,
-        role: newUser.role,
-        planType: newUser.planType,
-        banned: false,
-        createdAt: newUser.createdAt,
-        timetableCount: 0,
-        homeworkCount: 0,
-      },
-    });
-  });
-
-  app.post("/api/admin/users/:id/role", (req, res) => {
-    const { id } = req.params;
-    const { role } = req.body;
-    const user = (db.users || []).find((u) => u.id === id);
-    if (user) {
-      user.role = role === "admin" ? "admin" : "user";
-      saveDatabase();
-      res.json({ success: true, message: `Rolle erfolgreich auf ${user.role} gesetzt.` });
-    } else {
-      res.status(404).json({ error: "Benutzer nicht gefunden." });
-    }
-  });
-
-  app.post("/api/admin/users/:id/ban", (req, res) => {
-    const { id } = req.params;
-    const user = (db.users || []).find((u) => u.id === id);
-    if (user) {
-      if (user.email.toLowerCase().trim() === "max.kistner12@gmail.com") {
-        return res.status(400).json({ error: "Haupt-Administrator kann nicht gesperrt werden." });
-      }
-      (user as any).banned = true;
-      saveDatabase();
-      res.json({ success: true, message: `Benutzer ${user.email} gesperrt.` });
-    } else {
-      res.status(404).json({ error: "Benutzer nicht gefunden." });
-    }
-  });
-
-  app.post("/api/admin/users/:id/unban", (req, res) => {
-    const { id } = req.params;
-    const user = (db.users || []).find((u) => u.id === id);
-    if (user) {
-      (user as any).banned = false;
-      saveDatabase();
-      res.json({ success: true, message: `Benutzer ${user.email} entsperrt.` });
-    } else {
-      res.status(404).json({ error: "Benutzer nicht gefunden." });
-    }
-  });
-
-  app.post("/api/admin/users/:id/reset-password", (req, res) => {
-    const { id } = req.params;
-    const { newPassword } = req.body;
-    const user = (db.users || []).find((u) => u.id === id);
-    if (user) {
-      if (newPassword) {
-        const salt = crypto.randomBytes(16).toString("hex");
-        const passwordHash = crypto.pbkdf2Sync(newPassword, salt, 1000, 64, "sha512").toString("hex");
-        user.salt = salt;
-        user.passwordHash = passwordHash;
-        saveDatabase();
-      }
-      res.json({ success: true, message: `Passwort für ${user.email} erfolgreich geändert.` });
-    } else {
-      res.status(404).json({ error: "Benutzer nicht gefunden." });
-    }
-  });
-
-  app.delete("/api/admin/users/:id", (req, res) => {
-    const { id } = req.params;
-    const user = (db.users || []).find((u) => u.id === id);
-    if (user && user.email.toLowerCase().trim() === "max.kistner12@gmail.com") {
-      return res.status(400).json({ error: "Haupt-Administrator kann nicht gelöscht werden." });
-    }
-    db.users = (db.users || []).filter((u) => u.id !== id);
-    saveDatabase();
-    res.json({ success: true, message: "Benutzer erfolgreich gelöscht." });
-  });
   interface CascadeStep {
     engine: string;
     model: string;
