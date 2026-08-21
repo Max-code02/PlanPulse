@@ -2713,7 +2713,7 @@ Gib eine präzise, hilfsbereite und direkt nutzbare Antwort auf Deutsch.`;
     res.send(sitemapXml);
   });
 
-  app.get("/robots.txt", (_req, res) => {
+  app.get(["/robots.txt", "/robust.txt", "/robot.txt", "/robots"], (_req, res) => {
     res.header("Content-Type", "text/plain; charset=utf-8");
     res.send(`User-agent: *
 Allow: /
