@@ -2669,6 +2669,19 @@ Gib eine präzise, hilfsbereite und direkt nutzbare Antwort auf Deutsch.`;
       <video:category>Education</video:category>
       <video:family_friendly>yes</video:family_friendly>
     </video:video>
+    <video:video>
+      <video:thumbnail_loc>https://i.ytimg.com/vi/uGu4qeZTYKo/hqdefault.jpg</video:thumbnail_loc>
+      <video:title>PlanPulse Stundenplan &amp; Vertretungsplan YouTube Short</video:title>
+      <video:description>Aktuelles PlanPulse YouTube Short Video - Schneller Überblick und Tipps.</video:description>
+      <video:player_loc>https://www.youtube.com/embed/uGu4qeZTYKo</video:player_loc>
+      <video:publication_date>2026-08-21T08:00:00+02:00</video:publication_date>
+      <video:tag>PlanPulse</video:tag>
+      <video:tag>Stundenplan</video:tag>
+      <video:tag>Schule</video:tag>
+      <video:tag>Shorts</video:tag>
+      <video:category>Education</video:category>
+      <video:family_friendly>yes</video:family_friendly>
+    </video:video>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/#timetable</loc>
@@ -2749,6 +2762,7 @@ Sitemap: https://planpulse.mypi.co/sitemapurl
 # Channel: https://www.youtube.com/@PlanPulse-t5w/shorts
 # Short 1: https://www.youtube.com/shorts/2m0jz2Ol7zA
 # Short 2: https://www.youtube.com/shorts/93j80fc5hDs
+# Short 3: https://www.youtube.com/shorts/uGu4qeZTYKo
 `);
   });
 

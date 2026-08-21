@@ -61,6 +61,17 @@ export const WatermarkBadge: React.FC<WatermarkBadgeProps> = ({ onOpenLegal }) =
             </a>
 
             <a
+              href="https://www.youtube.com/shorts/uGu4qeZTYKo"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center space-x-1.5 bg-slate-800/80 hover:bg-slate-750 text-slate-200 hover:text-white border border-slate-700/80 px-3 py-1.5 rounded-lg text-xs font-medium transition-all shadow-sm group"
+            >
+              <Video className="w-3.5 h-3.5 text-rose-400 group-hover:scale-110 transition-transform" />
+              <span>Short #3</span>
+              <ExternalLink className="w-3 h-3 text-slate-400 opacity-60" />
+            </a>
+
+            <a
               href="https://www.youtube.com/@PlanPulse-t5w/shorts"
               target="_blank"
               rel="noopener noreferrer"

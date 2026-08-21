@@ -9,4 +9,5 @@ Sitemap: https://planpulse.mypi.co/sitemapurl
 # Channel: https://www.youtube.com/@PlanPulse-t5w/shorts
 # Short 1: https://www.youtube.com/shorts/2m0jz2Ol7zA
 # Short 2: https://www.youtube.com/shorts/93j80fc5hDs
+# Short 3: https://www.youtube.com/shorts/uGu4qeZTYKo
 

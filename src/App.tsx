@@ -47,16 +47,20 @@ export default function App() {
   });
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
 
-  // Synchronize route URLs with Dedicated Legal Pages (/impressum & /datenschutz)
+  // Synchronize route URLs and Page Titles with Dedicated Legal Pages (/impressum & /datenschutz)
   useEffect(() => {
     const handleUrlRoute = () => {
       const path = window.location.pathname.toLowerCase();
       const hash = window.location.hash.toLowerCase();
 
-      if (path === "/impressum" || hash === "#impressum") {
+      if (path === "/impressum" || path.startsWith("/impressum/") || hash === "#impressum" || hash.startsWith("#impressum")) {
         setActiveTab("impressum");
-      } else if (path === "/datenschutz" || hash === "#datenschutz") {
+        document.title = "Impressum – PlanPulse";
+      } else if (path === "/datenschutz" || path.startsWith("/datenschutz/") || hash === "#datenschutz" || hash.startsWith("#datenschutz")) {
         setActiveTab("datenschutz");
+        document.title = "Datenschutzerklärung – PlanPulse";
+      } else {
+        document.title = "PlanPulse – Kostenloser Stundenplan & Notenrechner";
       }
     };
 
@@ -74,13 +78,16 @@ export default function App() {
     try {
       if (tab === "impressum") {
         window.history.pushState(null, "", "/impressum");
+        document.title = "Impressum – PlanPulse";
       } else if (tab === "datenschutz") {
         window.history.pushState(null, "", "/datenschutz");
+        document.title = "Datenschutzerklärung – PlanPulse";
       } else {
         const path = window.location.pathname.toLowerCase();
-        if (path === "/impressum" || path === "/datenschutz") {
+        if (path.startsWith("/impressum") || path.startsWith("/datenschutz")) {
           window.history.pushState(null, "", "/");
         }
+        document.title = "PlanPulse – Kostenloser Stundenplan & Notenrechner";
       }
     } catch {
       // ignore
