@@ -26,7 +26,7 @@ import {
   GoogleAuthProvider,
   signInWithPopup
 } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -102,13 +102,27 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         const userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
         firebaseUser = userCredential.user;
         
-        const userObj: AuthUser = {
+        let userObj: AuthUser = {
           id: firebaseUser.uid,
           email: cleanEmail,
           planType: "premium",
           role: cleanEmail === "max.kistner12@gmail.com" ? "admin" : "user",
           createdAt: new Date().toISOString()
         };
+
+        // Ensure Firestore document exists if they were registered externally
+        try {
+          const userDocRef = doc(db, "users", firebaseUser.uid);
+          const userSnap = await getDoc(userDocRef);
+          if (!userSnap.exists()) {
+            await setDoc(userDocRef, userObj);
+          } else {
+            const data = userSnap.data();
+            userObj = { ...userObj, ...data, id: firebaseUser.uid };
+          }
+        } catch (e) {
+          console.error("Error ensuring Firestore user doc:", e);
+        }
         
         setSuccessMsg("Erfolgreich eingeloggt!");
         
