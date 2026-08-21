@@ -54,7 +54,7 @@ export interface UserConfig {
   notifyOnSubstitutions: boolean;
 }
 
-export type ActiveTab = "timetable" | "school_hub" | "homework" | "grades" | "ai" | "freemium" | "admin";
+export type ActiveTab = "timetable" | "school_hub" | "homework" | "grades" | "ai" | "freemium" | "admin" | "impressum" | "datenschutz";
 
 export type TaskCategory = "homework" | "exam" | "short_test" | "presentation" | "project" | "other";
 

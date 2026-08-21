@@ -9,7 +9,8 @@ import { FreemiumBilling } from "./components/FreemiumBilling";
 import { AdminPanel } from "./components/AdminPanel";
 import { WatermarkBadge } from "./components/WatermarkBadge";
 import { AuthModal } from "./components/AuthModal";
-import { LegalModal, LegalTab } from "./components/LegalModal";
+import { ImpressumPage } from "./components/ImpressumPage";
+import { DatenschutzPage } from "./components/DatenschutzPage";
 import { BottomLegalBar } from "./components/BottomLegalBar";
 import { 
   TimetableEntry, 
@@ -45,21 +46,17 @@ export default function App() {
     }
   });
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
-  const [legalModalTab, setLegalModalTab] = useState<LegalTab>("impressum");
 
-  // Synchronize route URLs with Legal Modal (/impressum & /datenschutz)
+  // Synchronize route URLs with Dedicated Legal Pages (/impressum & /datenschutz)
   useEffect(() => {
     const handleUrlRoute = () => {
       const path = window.location.pathname.toLowerCase();
       const hash = window.location.hash.toLowerCase();
 
       if (path === "/impressum" || hash === "#impressum") {
-        setLegalModalTab("impressum");
-        setIsLegalModalOpen(true);
+        setActiveTab("impressum");
       } else if (path === "/datenschutz" || hash === "#datenschutz") {
-        setLegalModalTab("datenschutz");
-        setIsLegalModalOpen(true);
+        setActiveTab("datenschutz");
       }
     };
 
@@ -72,35 +69,23 @@ export default function App() {
     };
   }, []);
 
-  const handleOpenLegal = (tab: LegalTab = "impressum") => {
-    setLegalModalTab(tab);
-    setIsLegalModalOpen(true);
+  const handleNavigate = (tab: ActiveTab) => {
+    setActiveTab(tab);
     try {
-      window.history.pushState(null, "", "/" + tab);
-    } catch {
-      // ignore
-    }
-  };
-
-  const handleCloseLegal = () => {
-    setIsLegalModalOpen(false);
-    try {
-      const path = window.location.pathname.toLowerCase();
-      if (path === "/impressum" || path === "/datenschutz") {
-        window.history.pushState(null, "", "/");
+      if (tab === "impressum") {
+        window.history.pushState(null, "", "/impressum");
+      } else if (tab === "datenschutz") {
+        window.history.pushState(null, "", "/datenschutz");
+      } else {
+        const path = window.location.pathname.toLowerCase();
+        if (path === "/impressum" || path === "/datenschutz") {
+          window.history.pushState(null, "", "/");
+        }
       }
     } catch {
       // ignore
     }
-  };
-
-  const handleLegalTabChange = (tab: LegalTab) => {
-    setLegalModalTab(tab);
-    try {
-      window.history.replaceState(null, "", "/" + tab);
-    } catch {
-      // ignore
-    }
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   // Sync Firebase Auth State
@@ -415,11 +400,11 @@ export default function App() {
       {/* Top Header */}
       <Header
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={handleNavigate}
         config={userConfig}
         currentUser={currentUser}
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
-        onUpgradeClick={() => setActiveTab("freemium")}
+        onUpgradeClick={() => handleNavigate("freemium")}
         isSyncing={isSyncing}
         onManualSync={fetchData}
       />
@@ -449,8 +434,8 @@ export default function App() {
             onEditEntry={handleEditTimetableEntry}
             onDeleteEntry={handleDeleteTimetableEntry}
             onClearEntries={handleClearTimetable}
-            onOpenAiParser={() => setActiveTab("ai")}
-            onOpenSchoolHub={() => setActiveTab("school_hub")}
+            onOpenAiParser={() => handleNavigate("ai")}
+            onOpenSchoolHub={() => handleNavigate("school_hub")}
             activeClass={filterClass}
             setActiveClass={setFilterClass}
           />
@@ -463,7 +448,7 @@ export default function App() {
             currentUser={currentUser}
             onAdoptTemplate={handleAdoptSchoolTemplate}
             onRefreshData={fetchData}
-            onNavigateToTimetable={() => setActiveTab("timetable")}
+            onNavigateToTimetable={() => handleNavigate("timetable")}
           />
         )}
 
@@ -485,7 +470,7 @@ export default function App() {
           <AiPlanAssistant
             isPremium={userConfig.planType === "premium"}
             onPlanParsed={fetchData}
-            onUpgradeClick={() => setActiveTab("freemium")}
+            onUpgradeClick={() => handleNavigate("freemium")}
           />
         )}
 
@@ -507,25 +492,31 @@ export default function App() {
             onAuthSuccess={handleAuthSuccess}
           />
         )}
+
+        {activeTab === "impressum" && (
+          <ImpressumPage
+            onNavigateBack={() => handleNavigate("timetable")}
+            onNavigateDatenschutz={() => handleNavigate("datenschutz")}
+          />
+        )}
+
+        {activeTab === "datenschutz" && (
+          <DatenschutzPage
+            onNavigateBack={() => handleNavigate("timetable")}
+            onNavigateImpressum={() => handleNavigate("impressum")}
+          />
+        )}
       </main>
 
       {/* Footer & Watermark */}
       <WatermarkBadge
         config={userConfig}
-        onUpgradeClick={() => setActiveTab("freemium")}
-        onOpenLegal={handleOpenLegal}
+        onUpgradeClick={() => handleNavigate("freemium")}
+        onOpenLegal={handleNavigate}
       />
 
       {/* Bottom Left Floating Quick-Access Bar */}
-      <BottomLegalBar onOpenLegal={handleOpenLegal} />
-
-      {/* Legal Modal (Impressum & Datenschutzerklärung) */}
-      <LegalModal
-        isOpen={isLegalModalOpen}
-        onClose={handleCloseLegal}
-        initialTab={legalModalTab}
-        onTabChange={handleLegalTabChange}
-      />
+      <BottomLegalBar onNavigate={handleNavigate} />
 
     </div>
   );

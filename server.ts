@@ -2707,6 +2707,18 @@ Gib eine präzise, hilfsbereite und direkt nutzbare Antwort auf Deutsch.`;
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://planpulse.mypi.co/impressum</loc>
+    <lastmod>2026-08-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://planpulse.mypi.co/datenschutz</loc>
+    <lastmod>2026-08-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
     <loc>https://planpulse.mypi.co/robust.txt</loc>
     <lastmod>2026-08-21</lastmod>
     <changefreq>monthly</changefreq>
