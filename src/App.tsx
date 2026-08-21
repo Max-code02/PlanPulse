@@ -53,10 +53,10 @@ export default function App() {
       const path = window.location.pathname.toLowerCase();
       const hash = window.location.hash.toLowerCase();
 
-      if (path === "/impressum" || path.startsWith("/impressum/") || hash === "#impressum" || hash.startsWith("#impressum")) {
+      if (path === "/impressum" || path.startsWith("/impressum/") || hash === "#impressum" || hash.startsWith("#impressum") || path.includes("impressum.html") || path.includes("impressium.html") || path === "/impressium") {
         setActiveTab("impressum");
         document.title = "Impressum – PlanPulse";
-      } else if (path === "/datenschutz" || path.startsWith("/datenschutz/") || hash === "#datenschutz" || hash.startsWith("#datenschutz")) {
+      } else if (path === "/datenschutz" || path.startsWith("/datenschutz/") || hash === "#datenschutz" || hash.startsWith("#datenschutz") || path.includes("datenschutz.html")) {
         setActiveTab("datenschutz");
         document.title = "Datenschutzerklärung – PlanPulse";
       } else {
@@ -76,16 +76,23 @@ export default function App() {
   const handleNavigate = (tab: ActiveTab) => {
     setActiveTab(tab);
     try {
+      const path = window.location.pathname.toLowerCase();
       if (tab === "impressum") {
-        window.history.pushState(null, "", "/impressum");
+        if (!path.includes("impressum") && !path.includes("impressium")) {
+          window.location.href = "/impressum.html";
+          return;
+        }
         document.title = "Impressum – PlanPulse";
       } else if (tab === "datenschutz") {
-        window.history.pushState(null, "", "/datenschutz");
+        if (!path.includes("datenschutz")) {
+          window.location.href = "/datenschutz.html";
+          return;
+        }
         document.title = "Datenschutzerklärung – PlanPulse";
       } else {
-        const path = window.location.pathname.toLowerCase();
-        if (path.startsWith("/impressum") || path.startsWith("/datenschutz")) {
-          window.history.pushState(null, "", "/");
+        if (path.includes("impressum") || path.includes("datenschutz")) {
+          window.location.href = "/";
+          return;
         }
         document.title = "PlanPulse – Kostenloser Stundenplan & Notenrechner";
       }

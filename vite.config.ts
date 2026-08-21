@@ -11,6 +11,16 @@ export default defineConfig(() => {
         '@': path.resolve(__dirname, '.'),
       },
     },
+    build: {
+      rollupOptions: {
+        input: {
+          main: path.resolve(__dirname, 'index.html'),
+          datenschutz: path.resolve(__dirname, 'datenschutz.html'),
+          impressum: path.resolve(__dirname, 'impressum.html'),
+          impressium: path.resolve(__dirname, 'impressium.html'),
+        },
+      },
+    },
     server: {
       proxy: {
         '/api': {
