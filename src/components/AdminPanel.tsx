@@ -20,6 +20,8 @@ import {
 } from "lucide-react";
 import { AuthUser, SchoolPlanTemplate } from "../types";
 import { safeFetchJson } from "../lib/api";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../lib/firebase";
 
 interface AdminUserItem {
   id: string;
@@ -83,9 +85,42 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         safeFetchJson<{ templates: SchoolPlanTemplate[] } | SchoolPlanTemplate[]>("/api/school-templates", { headers }),
       ]);
 
+      let allUsers: AdminUserItem[] = [];
       if (usersRes.ok && usersRes.data?.users) {
-        setUsers(usersRes.data.users);
+        allUsers = [...usersRes.data.users];
       }
+
+      // Nutzer aus Firebase laden und mit der lokalen DB mergen
+      try {
+        const usersSnap = await getDocs(collection(db, "users"));
+        const firebaseUsers = usersSnap.docs.map(doc => {
+          const data = doc.data();
+          const emailStr = data.email || "";
+          return {
+            id: doc.id,
+            email: emailStr,
+            role: data.role || (emailStr.toLowerCase() === "max.kistner12@gmail.com" ? "admin" : "user"),
+            planType: data.planType || "premium",
+            banned: !!data.banned,
+            createdAt: data.createdAt || new Date().toISOString(),
+            timetableCount: data.timetableEntries?.length || 0,
+            homeworkCount: data.homeworkItems?.length || 0,
+          } as AdminUserItem;
+        });
+
+        for (const fu of firebaseUsers) {
+          const idx = allUsers.findIndex(u => u.email === fu.email || u.id === fu.id);
+          if (idx !== -1) {
+            allUsers[idx] = { ...allUsers[idx], ...fu };
+          } else {
+            allUsers.push(fu);
+          }
+        }
+      } catch (fbErr) {
+        console.error("Fehler beim Laden der Firebase-Nutzer:", fbErr);
+      }
+
+      setUsers(allUsers);
 
       if (templatesRes.ok && templatesRes.data) {
         const raw = templatesRes.data;
