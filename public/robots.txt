@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+
+# Sitemap Indexing
+Sitemap: https://planpulse.mypi.co/sitemap.xml
+Sitemap: https://planpulse.mypi.co/sitemapurl
+
+# PlanPulse Official YouTube Channel & Shorts Videos
+# Channel: https://www.youtube.com/@PlanPulse-t5w/shorts
+# Short 1: https://www.youtube.com/shorts/2m0jz2Ol7zA
+# Short 2: https://www.youtube.com/shorts/93j80fc5hDs
+

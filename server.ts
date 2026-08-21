@@ -2629,6 +2629,105 @@ Gib eine präzise, hilfsbereite und direkt nutzbare Antwort auf Deutsch.`;
     res.type("text/html").send(`google-site-verification: ${filename}`);
   });
 
+  // Sitemap & Robots.txt endpoints for SEO and crawlers
+  const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:video="http://www.google.com/schemas/sitemap-video/1.1"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+        http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd
+        http://www.google.com/schemas/sitemap-video/1.1
+        http://www.google.com/schemas/sitemap-video/1.1/sitemap-video.xsd">
+  <url>
+    <loc>https://planpulse.mypi.co/</loc>
+    <lastmod>2026-08-21</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <video:video>
+      <video:thumbnail_loc>https://i.ytimg.com/vi/2m0jz2Ol7zA/hqdefault.jpg</video:thumbnail_loc>
+      <video:title>PlanPulse Quick Guide - Digitaler Stundenplan &amp; KI</video:title>
+      <video:description>Entdecke PlanPulse für deinen Stundenplan, Vertretungsplan und KI-Planer.</video:description>
+      <video:player_loc>https://www.youtube.com/embed/2m0jz2Ol7zA</video:player_loc>
+      <video:publication_date>2026-08-01T08:00:00+02:00</video:publication_date>
+      <video:tag>PlanPulse</video:tag>
+      <video:tag>Stundenplan</video:tag>
+      <video:tag>Vertretungsplan</video:tag>
+      <video:tag>Shorts</video:tag>
+      <video:category>Education</video:category>
+      <video:family_friendly>yes</video:family_friendly>
+    </video:video>
+    <video:video>
+      <video:thumbnail_loc>https://i.ytimg.com/vi/93j80fc5hDs/hqdefault.jpg</video:thumbnail_loc>
+      <video:title>PlanPulse Features &amp; Vertretungsplan Shorts</video:title>
+      <video:description>Übersicht zu Notenrechner, Hausaufgaben und Klausurplaner auf PlanPulse.</video:description>
+      <video:player_loc>https://www.youtube.com/embed/93j80fc5hDs</video:player_loc>
+      <video:publication_date>2026-08-01T08:00:00+02:00</video:publication_date>
+      <video:tag>PlanPulse</video:tag>
+      <video:tag>Hausaufgaben</video:tag>
+      <video:tag>Notenrechner</video:tag>
+      <video:tag>Shorts</video:tag>
+      <video:category>Education</video:category>
+      <video:family_friendly>yes</video:family_friendly>
+    </video:video>
+  </url>
+  <url>
+    <loc>https://planpulse.mypi.co/#timetable</loc>
+    <lastmod>2026-08-21</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://planpulse.mypi.co/#school-hub</loc>
+    <lastmod>2026-08-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://planpulse.mypi.co/#homework</loc>
+    <lastmod>2026-08-21</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://planpulse.mypi.co/#grades</loc>
+    <lastmod>2026-08-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://planpulse.mypi.co/#ai-assistant</loc>
+    <lastmod>2026-08-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://planpulse.mypi.co/#billing</loc>
+    <lastmod>2026-08-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+</urlset>`;
+
+  app.get(["/sitemap.xml", "/sitemap", "/sitemapurl", "/sitemap_index.xml"], (_req, res) => {
+    res.header("Content-Type", "application/xml; charset=utf-8");
+    res.send(sitemapXml);
+  });
+
+  app.get("/robots.txt", (_req, res) => {
+    res.header("Content-Type", "text/plain; charset=utf-8");
+    res.send(`User-agent: *
+Allow: /
+
+Sitemap: https://planpulse.mypi.co/sitemap.xml
+Sitemap: https://planpulse.mypi.co/sitemapurl
+
+# Official YouTube Channel & Shorts Videos
+# Channel: https://www.youtube.com/@PlanPulse-t5w/shorts
+# Short 1: https://www.youtube.com/shorts/2m0jz2Ol7zA
+# Short 2: https://www.youtube.com/shorts/93j80fc5hDs
+`);
+  });
+
   // Explicit JSON 404 for unhandled API routes so they never return HTML
   app.all("/api/*", (req, res) => {
     res.status(404).json({ error: `API-Endpunkt nicht gefunden: ${req.method} ${req.originalUrl || req.path}` });
