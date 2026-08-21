@@ -2706,6 +2706,18 @@ Gib eine präzise, hilfsbereite und direkt nutzbare Antwort auf Deutsch.`;
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
+  <url>
+    <loc>https://planpulse.mypi.co/robust.txt</loc>
+    <lastmod>2026-08-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://planpulse.mypi.co/robots.txt</loc>
+    <lastmod>2026-08-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>
 </urlset>`;
 
   app.get(["/sitemap.xml", "/sitemap", "/sitemapurl", "/sitemap_index.xml"], (_req, res) => {
