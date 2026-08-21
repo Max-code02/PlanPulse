@@ -1,17 +1,18 @@
 import React, { useState } from "react";
-import { Zap, ShieldCheck, Play, Video, ExternalLink, X } from "lucide-react";
+import { Zap, ShieldCheck, Play, Video, ExternalLink, X, Scale, FileText } from "lucide-react";
 import { UserConfig } from "../types";
 
 interface WatermarkBadgeProps {
   config?: UserConfig;
   onUpgradeClick?: () => void;
+  onOpenLegal?: (tab: "impressum" | "datenschutz") => void;
 }
 
-export const WatermarkBadge: React.FC<WatermarkBadgeProps> = () => {
+export const WatermarkBadge: React.FC<WatermarkBadgeProps> = ({ onOpenLegal }) => {
   const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
 
   return (
-    <footer className="mt-12 pt-8 pb-10 border-t border-slate-800 bg-slate-950/60 text-center text-xs text-slate-400">
+    <footer className="mt-12 pt-8 pb-12 border-t border-slate-800 bg-slate-950/60 text-center text-xs text-slate-400">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         
         {/* YouTube Shorts & Video Hub Bar */}
@@ -98,21 +99,50 @@ export const WatermarkBadge: React.FC<WatermarkBadgeProps> = () => {
           </div>
         )}
 
-        {/* Footer Brand & Status */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
-          <div className="flex items-center space-x-2">
-            <div className="w-5 h-5 rounded bg-blue-600 text-white flex items-center justify-center font-bold text-[10px]">
-              <Zap className="w-3 h-3" />
+        {/* Footer Brand, Legal Links & Status */}
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-800/80">
+          <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-3 text-left">
+            <div className="flex items-center space-x-2">
+              <div className="w-5 h-5 rounded bg-blue-600 text-white flex items-center justify-center font-bold text-[10px]">
+                <Zap className="w-3 h-3" />
+              </div>
+              <span>
+                <strong className="text-slate-300">PlanPulse</strong> — Smartes Schul-Dashboard
+              </span>
             </div>
-            <span>
-              <strong className="text-slate-300">PlanPulse</strong> — Dein smarter digitaler Schul- &amp; Vertretungsplan
+            <span className="hidden sm:inline text-slate-700">|</span>
+            <span className="text-slate-500 text-[11px]">
+              © {new Date().getFullYear()} Alle Rechte vorbehalten
             </span>
           </div>
 
-          <div className="flex items-center space-x-3 text-slate-400 text-[11px]">
-            <div className="flex items-center space-x-1">
+          {/* Explicit Legal Links */}
+          <div className="flex flex-wrap items-center justify-center gap-3 text-xs">
+            <button
+              id="footer-link-impressum"
+              onClick={() => onOpenLegal?.("impressum")}
+              className="inline-flex items-center space-x-1 text-slate-400 hover:text-blue-400 transition-colors px-2 py-1 rounded hover:bg-slate-800/60"
+            >
+              <Scale className="w-3.5 h-3.5" />
+              <span className="font-medium">Impressum (§ 5 DDG)</span>
+            </button>
+
+            <span className="text-slate-700">•</span>
+
+            <button
+              id="footer-link-datenschutz"
+              onClick={() => onOpenLegal?.("datenschutz")}
+              className="inline-flex items-center space-x-1 text-slate-400 hover:text-emerald-400 transition-colors px-2 py-1 rounded hover:bg-slate-800/60"
+            >
+              <ShieldCheck className="w-3.5 h-3.5" />
+              <span className="font-medium">Datenschutzerklärung (DSGVO)</span>
+            </button>
+
+            <span className="text-slate-700">•</span>
+
+            <div className="flex items-center space-x-1 text-slate-400 text-[11px]">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-              <span>Vollversion • Kostenlos &amp; unbegrenzt nutzbar</span>
+              <span>Kostenlose Vollversion</span>
             </div>
           </div>
         </div>

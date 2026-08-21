@@ -9,6 +9,8 @@ import { FreemiumBilling } from "./components/FreemiumBilling";
 import { AdminPanel } from "./components/AdminPanel";
 import { WatermarkBadge } from "./components/WatermarkBadge";
 import { AuthModal } from "./components/AuthModal";
+import { LegalModal, LegalTab } from "./components/LegalModal";
+import { BottomLegalBar } from "./components/BottomLegalBar";
 import { 
   TimetableEntry, 
   SubstitutionNotice,
@@ -43,6 +45,63 @@ export default function App() {
     }
   });
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isLegalModalOpen, setIsLegalModalOpen] = useState(false);
+  const [legalModalTab, setLegalModalTab] = useState<LegalTab>("impressum");
+
+  // Synchronize route URLs with Legal Modal (/impressum & /datenschutz)
+  useEffect(() => {
+    const handleUrlRoute = () => {
+      const path = window.location.pathname.toLowerCase();
+      const hash = window.location.hash.toLowerCase();
+
+      if (path === "/impressum" || hash === "#impressum") {
+        setLegalModalTab("impressum");
+        setIsLegalModalOpen(true);
+      } else if (path === "/datenschutz" || hash === "#datenschutz") {
+        setLegalModalTab("datenschutz");
+        setIsLegalModalOpen(true);
+      }
+    };
+
+    handleUrlRoute();
+    window.addEventListener("popstate", handleUrlRoute);
+    window.addEventListener("hashchange", handleUrlRoute);
+    return () => {
+      window.removeEventListener("popstate", handleUrlRoute);
+      window.removeEventListener("hashchange", handleUrlRoute);
+    };
+  }, []);
+
+  const handleOpenLegal = (tab: LegalTab = "impressum") => {
+    setLegalModalTab(tab);
+    setIsLegalModalOpen(true);
+    try {
+      window.history.pushState(null, "", "/" + tab);
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleCloseLegal = () => {
+    setIsLegalModalOpen(false);
+    try {
+      const path = window.location.pathname.toLowerCase();
+      if (path === "/impressum" || path === "/datenschutz") {
+        window.history.pushState(null, "", "/");
+      }
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleLegalTabChange = (tab: LegalTab) => {
+    setLegalModalTab(tab);
+    try {
+      window.history.replaceState(null, "", "/" + tab);
+    } catch {
+      // ignore
+    }
+  };
 
   // Sync Firebase Auth State
   useEffect(() => {
@@ -454,6 +513,18 @@ export default function App() {
       <WatermarkBadge
         config={userConfig}
         onUpgradeClick={() => setActiveTab("freemium")}
+        onOpenLegal={handleOpenLegal}
+      />
+
+      {/* Bottom Left Floating Quick-Access Bar */}
+      <BottomLegalBar onOpenLegal={handleOpenLegal} />
+
+      {/* Legal Modal (Impressum & Datenschutzerklärung) */}
+      <LegalModal
+        isOpen={isLegalModalOpen}
+        onClose={handleCloseLegal}
+        initialTab={legalModalTab}
+        onTabChange={handleLegalTabChange}
       />
 
     </div>
