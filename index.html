@@ -10,11 +10,18 @@
     <meta name="application-name" content="PlanPulse" />
     <meta name="apple-mobile-web-app-title" content="PlanPulse" />
     <meta name="google-site-verification" content="tg8oV9XcgZNTM1fZxvScw0oU7VeyNBLREak5T3-mm7g" />
-    <link rel="canonical" href="https://planpulse.mypi.co/" />
+    <link rel="canonical" href="https://plan-pulse-five.vercel.app/" />
     <link rel="icon" type="image/png" href="/icon.png" />
     <link rel="apple-touch-icon" href="/icon.png" />
     <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml" />
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+
+    <!-- Domain Canonical Redirect from mypi.co to Vercel (preserves hash & path) -->
+    <script>
+      if (typeof window !== "undefined" && window.location && window.location.hostname && window.location.hostname.includes("mypi.co")) {
+        window.location.href = "https://plan-pulse-five.vercel.app" + window.location.pathname + window.location.search + window.location.hash;
+      }
+    </script>
     
     <!-- Open Graph / Facebook / WhatsApp Preview -->
     <meta property="og:title" content="PlanPulse – Kostenloser Stundenplan & Notenrechner" />

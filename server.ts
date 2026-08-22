@@ -2638,6 +2638,7 @@ Gib eine präzise, hilfsbereite und direkt nutzbare Antwort auf Deutsch.`;
         http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd
         http://www.google.com/schemas/sitemap-video/1.1
         http://www.google.com/schemas/sitemap-video/1.1/sitemap-video.xsd">
+  <!-- Primary Domain: planpulse.mypi.co -->
   <url>
     <loc>https://planpulse.mypi.co/</loc>
     <lastmod>2026-08-21</lastmod>
@@ -2720,13 +2721,13 @@ Gib eine präzise, hilfsbereite und direkt nutzbare Antwort auf Deutsch.`;
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://planpulse.mypi.co/impressum</loc>
+    <loc>https://planpulse.mypi.co/impressum.html</loc>
     <lastmod>2026-08-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://planpulse.mypi.co/datenschutz</loc>
+    <loc>https://planpulse.mypi.co/datenschutz.html</loc>
     <lastmod>2026-08-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
@@ -2739,6 +2740,113 @@ Gib eine präzise, hilfsbereite und direkt nutzbare Antwort auf Deutsch.`;
   </url>
   <url>
     <loc>https://planpulse.mypi.co/robots.txt</loc>
+    <lastmod>2026-08-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
+  <!-- Vercel Domain: plan-pulse-five.vercel.app -->
+  <url>
+    <loc>https://plan-pulse-five.vercel.app/</loc>
+    <lastmod>2026-08-21</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>1.0</priority>
+    <video:video>
+      <video:thumbnail_loc>https://i.ytimg.com/vi/2m0jz2Ol7zA/hqdefault.jpg</video:thumbnail_loc>
+      <video:title>PlanPulse Quick Guide - Digitaler Stundenplan &amp; KI</video:title>
+      <video:description>Entdecke PlanPulse für deinen Stundenplan, Vertretungsplan und KI-Planer.</video:description>
+      <video:player_loc>https://www.youtube.com/embed/2m0jz2Ol7zA</video:player_loc>
+      <video:publication_date>2026-08-01T08:00:00+02:00</video:publication_date>
+      <video:tag>PlanPulse</video:tag>
+      <video:tag>Stundenplan</video:tag>
+      <video:tag>Vertretungsplan</video:tag>
+      <video:tag>Shorts</video:tag>
+      <video:category>Education</video:category>
+      <video:family_friendly>yes</video:family_friendly>
+    </video:video>
+    <video:video>
+      <video:thumbnail_loc>https://i.ytimg.com/vi/93j80fc5hDs/hqdefault.jpg</video:thumbnail_loc>
+      <video:title>PlanPulse Features &amp; Vertretungsplan Shorts</video:title>
+      <video:description>Übersicht zu Notenrechner, Hausaufgaben und Klausurplaner auf PlanPulse.</video:description>
+      <video:player_loc>https://www.youtube.com/embed/93j80fc5hDs</video:player_loc>
+      <video:publication_date>2026-08-01T08:00:00+02:00</video:publication_date>
+      <video:tag>PlanPulse</video:tag>
+      <video:tag>Hausaufgaben</video:tag>
+      <video:tag>Notenrechner</video:tag>
+      <video:tag>Shorts</video:tag>
+      <video:category>Education</video:category>
+      <video:family_friendly>yes</video:family_friendly>
+    </video:video>
+    <video:video>
+      <video:thumbnail_loc>https://i.ytimg.com/vi/uGu4qeZTYKo/hqdefault.jpg</video:thumbnail_loc>
+      <video:title>PlanPulse Stundenplan &amp; Vertretungsplan YouTube Short</video:title>
+      <video:description>Aktuelles PlanPulse YouTube Short Video - Schneller Überblick und Tipps.</video:description>
+      <video:player_loc>https://www.youtube.com/embed/uGu4qeZTYKo</video:player_loc>
+      <video:publication_date>2026-08-21T08:00:00+02:00</video:publication_date>
+      <video:tag>PlanPulse</video:tag>
+      <video:tag>Stundenplan</video:tag>
+      <video:tag>Schule</video:tag>
+      <video:tag>Shorts</video:tag>
+      <video:category>Education</video:category>
+      <video:family_friendly>yes</video:family_friendly>
+    </video:video>
+  </url>
+  <url>
+    <loc>https://plan-pulse-five.vercel.app/#timetable</loc>
+    <lastmod>2026-08-21</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://plan-pulse-five.vercel.app/#school-hub</loc>
+    <lastmod>2026-08-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://plan-pulse-five.vercel.app/#homework</loc>
+    <lastmod>2026-08-21</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://plan-pulse-five.vercel.app/#grades</loc>
+    <lastmod>2026-08-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://plan-pulse-five.vercel.app/#ai-assistant</loc>
+    <lastmod>2026-08-21</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://plan-pulse-five.vercel.app/#billing</loc>
+    <lastmod>2026-08-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://plan-pulse-five.vercel.app/impressum.html</loc>
+    <lastmod>2026-08-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://plan-pulse-five.vercel.app/datenschutz.html</loc>
+    <lastmod>2026-08-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://plan-pulse-five.vercel.app/robust.txt</loc>
+    <lastmod>2026-08-21</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://plan-pulse-five.vercel.app/robots.txt</loc>
     <lastmod>2026-08-21</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
@@ -2757,6 +2865,8 @@ Allow: /
 
 Sitemap: https://planpulse.mypi.co/sitemap.xml
 Sitemap: https://planpulse.mypi.co/sitemapurl
+Sitemap: https://plan-pulse-five.vercel.app/sitemap.xml
+Sitemap: https://plan-pulse-five.vercel.app/sitemapurl
 
 # Official YouTube Channel & Shorts Videos
 # Channel: https://www.youtube.com/@PlanPulse-t5w/shorts
