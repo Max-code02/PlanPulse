@@ -5,17 +5,8 @@ import crypto from "crypto";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
-import * as admin from "firebase-admin";
 
 dotenv.config();
-
-try {
-  admin.initializeApp({
-    projectId: "planpluse"
-  });
-} catch (e) {
-  console.log("Firebase Admin initialization error:", e);
-}
 
 let aiClient: GoogleGenAI | null = null;
 function getAi(): GoogleGenAI | null {
@@ -1237,28 +1228,6 @@ async function startServer() {
       timetableCount: u.timetableEntries?.length || 0,
       homeworkCount: u.homeworkItems?.length || 0,
     }));
-
-    try {
-      const listUsersResult = await admin.auth().listUsers(1000);
-      listUsersResult.users.forEach((authRecord) => {
-        const emailStr = authRecord.email || "";
-        const existingIdx = userList.findIndex(u => u.email === emailStr || u.id === authRecord.uid);
-        if (existingIdx === -1) {
-          userList.push({
-            id: authRecord.uid,
-            email: emailStr,
-            planType: "premium",
-            role: ADMIN_EMAILS.includes(emailStr.toLowerCase()) ? "admin" : "user",
-            banned: authRecord.disabled,
-            createdAt: authRecord.metadata.creationTime || new Date().toISOString(),
-            timetableCount: 0,
-            homeworkCount: 0,
-          });
-        }
-      });
-    } catch (e) {
-      console.error("Error fetching Firebase Auth users:", e);
-    }
 
     res.json({ success: true, users: userList });
   });
