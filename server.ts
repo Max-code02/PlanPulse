@@ -2683,6 +2683,19 @@ Gib eine präzise, hilfsbereite und direkt nutzbare Antwort auf Deutsch.`;
       <video:category>Education</video:category>
       <video:family_friendly>yes</video:family_friendly>
     </video:video>
+    <video:video>
+      <video:thumbnail_loc>https://i.ytimg.com/vi/z1NAiYe4DLY/hqdefault.jpg</video:thumbnail_loc>
+      <video:title>PlanPulse Stundenplan &amp; Schul-Hub YouTube Short</video:title>
+      <video:description>PlanPulse YouTube Short Video - Stundenplan, Vertretungsplan und Notenverwaltung im Überblick.</video:description>
+      <video:player_loc>https://www.youtube.com/embed/z1NAiYe4DLY</video:player_loc>
+      <video:publication_date>2026-08-22T08:00:00+02:00</video:publication_date>
+      <video:tag>PlanPulse</video:tag>
+      <video:tag>Stundenplan</video:tag>
+      <video:tag>Schulplan</video:tag>
+      <video:tag>Shorts</video:tag>
+      <video:category>Education</video:category>
+      <video:family_friendly>yes</video:family_friendly>
+    </video:video>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/#timetable</loc>
@@ -2786,6 +2799,19 @@ Gib eine präzise, hilfsbereite und direkt nutzbare Antwort auf Deutsch.`;
       <video:tag>PlanPulse</video:tag>
       <video:tag>Stundenplan</video:tag>
       <video:tag>Schule</video:tag>
+      <video:tag>Shorts</video:tag>
+      <video:category>Education</video:category>
+      <video:family_friendly>yes</video:family_friendly>
+    </video:video>
+    <video:video>
+      <video:thumbnail_loc>https://i.ytimg.com/vi/z1NAiYe4DLY/hqdefault.jpg</video:thumbnail_loc>
+      <video:title>PlanPulse Stundenplan &amp; Schul-Hub YouTube Short</video:title>
+      <video:description>PlanPulse YouTube Short Video - Stundenplan, Vertretungsplan und Notenverwaltung im Überblick.</video:description>
+      <video:player_loc>https://www.youtube.com/embed/z1NAiYe4DLY</video:player_loc>
+      <video:publication_date>2026-08-22T08:00:00+02:00</video:publication_date>
+      <video:tag>PlanPulse</video:tag>
+      <video:tag>Stundenplan</video:tag>
+      <video:tag>Schulplan</video:tag>
       <video:tag>Shorts</video:tag>
       <video:category>Education</video:category>
       <video:family_friendly>yes</video:family_friendly>
