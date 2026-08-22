@@ -1,6 +1,6 @@
 {
   "name": "PlanPulse",
-  "description": "PlanPulse - Dashboard für individuelle Schul- und Privatstundenpläne, Vertretungsplan, Haus- und Schulaufgabenplaner sowie Notenrechner mit KI-Assistent.",
+  "description": "PlanPulse - Dashboard für individuelle Schul- und Privatstundenpläne, Vertretungsplan, Haus- und Schulaufgabenplaner, Notenrechner sowie automatischen Ferien- und Feiertagskalender mit KI-Assistent.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

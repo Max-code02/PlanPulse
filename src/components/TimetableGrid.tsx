@@ -20,11 +20,13 @@ import {
   Zap,
   Info,
   RefreshCw,
-  X
+  X,
+  Palmtree
 } from "lucide-react";
 import { TimetableEntry, DayOfWeek, LessonStatus, UserSubject } from "../types";
 import { PERIOD_TIMES, DAYS, exportToICal, exportToCSV } from "../utils";
 import { safeFetchJson } from "../lib/api";
+import { HolidayModal } from "./HolidayModal";
 
 const COLOR_PRESETS = [
   { name: "Blau (z.B. Mathe)", color: "#2563eb" },
@@ -66,6 +68,7 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
 }) => {
   const [selectedDay, setSelectedDay] = useState<DayOfWeek | "ALL">("ALL");
   const [modalOpen, setModalOpen] = useState(false);
+  const [holidayModalOpen, setHolidayModalOpen] = useState(false);
   const [confirmClearOpen, setConfirmClearOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<TimetableEntry | null>(null);
 
@@ -483,6 +486,16 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
             >
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
               <span>Plan prüfen</span>
+            </button>
+
+            {/* Ferien & Feiertage Modal Trigger (Discreet & Compact) */}
+            <button
+              onClick={() => setHolidayModalOpen(true)}
+              className="flex items-center space-x-1.5 bg-slate-800 hover:bg-teal-950/40 text-teal-300 hover:text-teal-200 border border-slate-700 hover:border-teal-700/60 text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-all shadow-sm"
+              title="Schulferien & Feiertage nach Bundesland anzeigen"
+            >
+              <Palmtree className="w-3.5 h-3.5 text-teal-400" />
+              <span>Ferien</span>
             </button>
 
             <button
@@ -1235,6 +1248,12 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
           </div>
         </div>
       )}
+
+      {/* Compact Holiday Modal */}
+      <HolidayModal
+        isOpen={holidayModalOpen}
+        onClose={() => setHolidayModalOpen(false)}
+      />
 
     </div>
   );

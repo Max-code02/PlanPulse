@@ -12,7 +12,8 @@ import {
   Lock,
   CheckCircle2,
   ShieldAlert,
-  FileDown
+  FileDown,
+  Palmtree
 } from "lucide-react";
 import { ActiveTab, UserConfig, AuthUser } from "../types";
 
