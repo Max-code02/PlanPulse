@@ -7,6 +7,10 @@ Sitemap: https://planpulse.mypi.co/sitemapurl
 Sitemap: https://plan-pulse-five.vercel.app/sitemap.xml
 Sitemap: https://plan-pulse-five.vercel.app/sitemapurl
 
+# PlanPulse Official Android App Downloads (APK)
+# Upload.app Direct APK: https://upload.app/download/planpulse/de.planpulse.app/38bba70ca599e71d1d6dbd6537748b602a06792dfe26ce991b8e41118a5f565b
+# BetaDrop App: https://betadrop.app/app/gMbqiQ
+
 # PlanPulse Official YouTube Channel & Shorts Videos
 # Channel: https://www.youtube.com/@PlanPulse-t5w/shorts
 # Short 1: https://www.youtube.com/shorts/2m0jz2Ol7zA

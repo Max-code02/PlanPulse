@@ -2629,6 +2629,18 @@ Gib eine präzise, hilfsbereite und direkt nutzbare Antwort auf Deutsch.`;
     res.type("text/html").send(`google-site-verification: ${filename}`);
   });
 
+  // Direct APK & App Redirect Routes
+  const UPLOAD_APP_APK_URL = "https://upload.app/download/planpulse/de.planpulse.app/38bba70ca599e71d1d6dbd6537748b602a06792dfe26ce991b8e41118a5f565b";
+  const BETADROP_APP_URL = "https://betadrop.app/app/gMbqiQ";
+
+  app.get(["/apk", "/download/apk", "/app/apk", "/download-apk", "/planpulse.apk"], (_req, res) => {
+    res.redirect(302, UPLOAD_APP_APK_URL);
+  });
+
+  app.get(["/betadrop", "/app/betadrop", "/apk-betadrop"], (_req, res) => {
+    res.redirect(302, BETADROP_APP_URL);
+  });
+
   // Sitemap & Robots.txt endpoints for SEO and crawlers
   const sitemapXml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
@@ -2641,7 +2653,7 @@ Gib eine präzise, hilfsbereite und direkt nutzbare Antwort auf Deutsch.`;
   <!-- Primary Domain: planpulse.mypi.co -->
   <url>
     <loc>https://planpulse.mypi.co/</loc>
-    <lastmod>2026-08-21</lastmod>
+    <lastmod>2026-08-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
     <video:video>
@@ -2699,61 +2711,73 @@ Gib eine präzise, hilfsbereite und direkt nutzbare Antwort auf Deutsch.`;
   </url>
   <url>
     <loc>https://planpulse.mypi.co/#timetable</loc>
-    <lastmod>2026-08-21</lastmod>
+    <lastmod>2026-08-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/#school-hub</loc>
-    <lastmod>2026-08-21</lastmod>
+    <lastmod>2026-08-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/#homework</loc>
-    <lastmod>2026-08-21</lastmod>
+    <lastmod>2026-08-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/#grades</loc>
-    <lastmod>2026-08-21</lastmod>
+    <lastmod>2026-08-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/#ai-assistant</loc>
-    <lastmod>2026-08-21</lastmod>
+    <lastmod>2026-08-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/#billing</loc>
-    <lastmod>2026-08-21</lastmod>
+    <lastmod>2026-08-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://planpulse.mypi.co/download/apk</loc>
+    <lastmod>2026-08-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://planpulse.mypi.co/betadrop</loc>
+    <lastmod>2026-08-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
     <loc>https://planpulse.mypi.co/impressum.html</loc>
-    <lastmod>2026-08-21</lastmod>
+    <lastmod>2026-08-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/datenschutz.html</loc>
-    <lastmod>2026-08-21</lastmod>
+    <lastmod>2026-08-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/robust.txt</loc>
-    <lastmod>2026-08-21</lastmod>
+    <lastmod>2026-08-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/robots.txt</loc>
-    <lastmod>2026-08-21</lastmod>
+    <lastmod>2026-08-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
@@ -2761,7 +2785,7 @@ Gib eine präzise, hilfsbereite und direkt nutzbare Antwort auf Deutsch.`;
   <!-- Vercel Domain: plan-pulse-five.vercel.app -->
   <url>
     <loc>https://plan-pulse-five.vercel.app/</loc>
-    <lastmod>2026-08-21</lastmod>
+    <lastmod>2026-08-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
     <video:video>
@@ -2819,63 +2843,89 @@ Gib eine präzise, hilfsbereite und direkt nutzbare Antwort auf Deutsch.`;
   </url>
   <url>
     <loc>https://plan-pulse-five.vercel.app/#timetable</loc>
-    <lastmod>2026-08-21</lastmod>
+    <lastmod>2026-08-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://plan-pulse-five.vercel.app/#school-hub</loc>
-    <lastmod>2026-08-21</lastmod>
+    <lastmod>2026-08-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://plan-pulse-five.vercel.app/#homework</loc>
-    <lastmod>2026-08-21</lastmod>
+    <lastmod>2026-08-23</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://plan-pulse-five.vercel.app/#grades</loc>
-    <lastmod>2026-08-21</lastmod>
+    <lastmod>2026-08-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://plan-pulse-five.vercel.app/#ai-assistant</loc>
-    <lastmod>2026-08-21</lastmod>
+    <lastmod>2026-08-23</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://plan-pulse-five.vercel.app/#billing</loc>
-    <lastmod>2026-08-21</lastmod>
+    <lastmod>2026-08-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://plan-pulse-five.vercel.app/download/apk</loc>
+    <lastmod>2026-08-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
+    <loc>https://plan-pulse-five.vercel.app/betadrop</loc>
+    <lastmod>2026-08-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.85</priority>
+  </url>
+  <url>
     <loc>https://plan-pulse-five.vercel.app/impressum.html</loc>
-    <lastmod>2026-08-21</lastmod>
+    <lastmod>2026-08-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://plan-pulse-five.vercel.app/datenschutz.html</loc>
-    <lastmod>2026-08-21</lastmod>
+    <lastmod>2026-08-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://plan-pulse-five.vercel.app/robust.txt</loc>
-    <lastmod>2026-08-21</lastmod>
+    <lastmod>2026-08-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://plan-pulse-five.vercel.app/robots.txt</loc>
-    <lastmod>2026-08-21</lastmod>
+    <lastmod>2026-08-23</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
+  </url>
+
+  <!-- Official Direct Android APK Download Links -->
+  <url>
+    <loc>https://upload.app/download/planpulse/de.planpulse.app/38bba70ca599e71d1d6dbd6537748b602a06792dfe26ce991b8e41118a5f565b</loc>
+    <lastmod>2026-08-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://betadrop.app/app/gMbqiQ</loc>
+    <lastmod>2026-08-23</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
   </url>
 </urlset>`;
 
@@ -2894,11 +2944,16 @@ Sitemap: https://planpulse.mypi.co/sitemapurl
 Sitemap: https://plan-pulse-five.vercel.app/sitemap.xml
 Sitemap: https://plan-pulse-five.vercel.app/sitemapurl
 
+# PlanPulse Official Android App Downloads (APK)
+# Upload.app Direct APK: https://upload.app/download/planpulse/de.planpulse.app/38bba70ca599e71d1d6dbd6537748b602a06792dfe26ce991b8e41118a5f565b
+# BetaDrop App: https://betadrop.app/app/gMbqiQ
+
 # Official YouTube Channel & Shorts Videos
 # Channel: https://www.youtube.com/@PlanPulse-t5w/shorts
 # Short 1: https://www.youtube.com/shorts/2m0jz2Ol7zA
 # Short 2: https://www.youtube.com/shorts/93j80fc5hDs
 # Short 3: https://www.youtube.com/shorts/uGu4qeZTYKo
+# Short 4: https://www.youtube.com/shorts/z1NAiYe4DLY
 `);
   });
 

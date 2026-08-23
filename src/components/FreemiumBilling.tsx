@@ -188,31 +188,42 @@ export const FreemiumBilling: React.FC<FreemiumBillingProps> = ({
             </button>
           </div>
 
-          {/* Android App BetaDrop */}
+          {/* Android App Downloads */}
           <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 flex flex-col justify-between space-y-3 sm:col-span-2 lg:col-span-4 mt-2">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div className="space-y-1">
                 <div className="flex items-center space-x-2 text-white font-bold text-xs">
                   <Smartphone className="w-4 h-4 text-emerald-400" />
-                  <span>PlanPulse Android App (APK / BetaDrop)</span>
+                  <span>PlanPulse Android App (APK Downloads)</span>
                   <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full">
                     Kostenlos
                   </span>
                 </div>
                 <p className="text-[11px] text-slate-400">
-                  Lade dir die PlanPulse APK für Android-Smartphones direkt über BetaDrop herunter.
+                  Lade dir die offizielle PlanPulse APK für Android-Smartphones direkt herunter oder über BetaDrop.
                 </p>
               </div>
-              <a
-                href="https://betadrop.app/app/gMbqiQ"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center space-x-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg transition-colors shadow-sm"
-              >
-                <Smartphone className="w-3.5 h-3.5" />
-                <span>App auf BetaDrop öffnen</span>
-                <ExternalLink className="w-3 h-3" />
-              </a>
+              <div className="flex flex-wrap items-center gap-2">
+                <a
+                  href="https://upload.app/download/planpulse/de.planpulse.app/38bba70ca599e71d1d6dbd6537748b602a06792dfe26ce991b8e41118a5f565b"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center space-x-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg transition-colors shadow-sm"
+                >
+                  <Smartphone className="w-3.5 h-3.5" />
+                  <span>Direkt APK (Upload.app)</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+                <a
+                  href="https://betadrop.app/app/gMbqiQ"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center space-x-1.5 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold rounded-lg transition-colors border border-slate-750"
+                >
+                  <span>BetaDrop</span>
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
             </div>
           </div>
 
