@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Zap, ShieldCheck, Play, Video, ExternalLink, X, Scale, FileText } from "lucide-react";
+import { Zap, ShieldCheck, Play, Video, ExternalLink, X, Scale, FileText, Smartphone } from "lucide-react";
 import { UserConfig } from "../types";
 
 interface WatermarkBadgeProps {
@@ -127,8 +127,22 @@ export const WatermarkBadge: React.FC<WatermarkBadgeProps> = ({ onOpenLegal }) =
             </span>
           </div>
 
-          {/* Explicit Legal Links */}
+          {/* Explicit Legal Links & App Link */}
           <div className="flex flex-wrap items-center justify-center gap-3 text-xs">
+            <a
+              id="footer-link-app"
+              href="https://betadrop.app/app/gMbqiQ"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center space-x-1.5 text-emerald-400 hover:text-emerald-300 transition-colors px-2 py-1 rounded hover:bg-slate-800/60 font-medium"
+              title="PlanPulse Android App herunterladen (BetaDrop)"
+            >
+              <Smartphone className="w-3.5 h-3.5" />
+              <span>Android App (BetaDrop)</span>
+            </a>
+
+            <span className="text-slate-700">•</span>
+
             <button
               id="footer-link-impressum"
               onClick={() => onOpenLegal?.("impressum")}

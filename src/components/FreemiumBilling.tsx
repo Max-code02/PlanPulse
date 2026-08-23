@@ -8,7 +8,9 @@ import {
   CheckCircle2,
   Zap,
   Layers,
-  Cpu
+  Cpu,
+  Smartphone,
+  ExternalLink
 } from "lucide-react";
 import { UserConfig, TimetableEntry, SubstitutionNotice } from "../types";
 import { exportToCSV, exportToJSON, exportToICal } from "../utils";
@@ -184,6 +186,34 @@ export const FreemiumBilling: React.FC<FreemiumBillingProps> = ({
             >
               JSON Sichern
             </button>
+          </div>
+
+          {/* Android App BetaDrop */}
+          <div className="p-4 bg-slate-950 rounded-xl border border-slate-800 flex flex-col justify-between space-y-3 sm:col-span-2 lg:col-span-4 mt-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+              <div className="space-y-1">
+                <div className="flex items-center space-x-2 text-white font-bold text-xs">
+                  <Smartphone className="w-4 h-4 text-emerald-400" />
+                  <span>PlanPulse Android App (APK / BetaDrop)</span>
+                  <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    Kostenlos
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400">
+                  Lade dir die PlanPulse APK für Android-Smartphones direkt über BetaDrop herunter.
+                </p>
+              </div>
+              <a
+                href="https://betadrop.app/app/gMbqiQ"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center justify-center space-x-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg transition-colors shadow-sm"
+              >
+                <Smartphone className="w-3.5 h-3.5" />
+                <span>App auf BetaDrop öffnen</span>
+                <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
           </div>
 
         </div>
