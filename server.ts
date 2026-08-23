@@ -2913,20 +2913,6 @@ Gib eine präzise, hilfsbereite und direkt nutzbare Antwort auf Deutsch.`;
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
-
-  <!-- Official Direct Android APK Download Links -->
-  <url>
-    <loc>https://upload.app/download/planpulse/de.planpulse.app/38bba70ca599e71d1d6dbd6537748b602a06792dfe26ce991b8e41118a5f565b</loc>
-    <lastmod>2026-08-23</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
-  <url>
-    <loc>https://betadrop.app/app/gMbqiQ</loc>
-    <lastmod>2026-08-23</lastmod>
-    <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
-  </url>
 </urlset>`;
 
   app.get(["/sitemap.xml", "/sitemap", "/sitemapurl", "/sitemap_index.xml"], (_req, res) => {
