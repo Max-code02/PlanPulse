@@ -21,12 +21,22 @@ import {
   Info,
   RefreshCw,
   X,
-  Palmtree
+  Palmtree,
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
+  ChevronUp,
+  Layers,
+  Grid3X3,
+  List,
+  Eye,
+  EyeOff
 } from "lucide-react";
-import { TimetableEntry, DayOfWeek, LessonStatus, UserSubject } from "../types";
+import { TimetableEntry, DayOfWeek, LessonStatus, UserSubject, DevicePlatform } from "../types";
 import { PERIOD_TIMES, DAYS, exportToICal, exportToCSV } from "../utils";
 import { safeFetchJson } from "../lib/api";
 import { HolidayModal } from "./HolidayModal";
+import { LessonEntryModal } from "./LessonEntryModal";
 
 const COLOR_PRESETS = [
   { name: "Blau (z.B. Mathe)", color: "#2563eb" },
@@ -53,6 +63,7 @@ interface TimetableGridProps {
   onOpenSchoolHub?: () => void;
   activeClass: string;
   setActiveClass: (cls: string) => void;
+  devicePlatform?: DevicePlatform;
 }
 
 export const TimetableGrid: React.FC<TimetableGridProps> = ({
@@ -65,12 +76,74 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
   onOpenSchoolHub,
   activeClass,
   setActiveClass,
+  devicePlatform = "pc",
 }) => {
-  const [selectedDay, setSelectedDay] = useState<DayOfWeek | "ALL">("ALL");
+  const isMobilePlatform = devicePlatform === "apple" || devicePlatform === "android";
+  
+  // Calculate today's day of week
+  const getTodayDayOfWeek = (): DayOfWeek => {
+    const day = new Date().getDay();
+    if (day === 1) return "Mo";
+    if (day === 2) return "Di";
+    if (day === 3) return "Mi";
+    if (day === 4) return "Do";
+    if (day === 5) return "Fr";
+    return "Mo";
+  };
+
+  const [selectedDay, setSelectedDay] = useState<DayOfWeek | "ALL">(() => {
+    return isMobilePlatform ? getTodayDayOfWeek() : "ALL";
+  });
+
+  const [viewMode, setViewMode] = useState<"agenda" | "grid">(() => {
+    return isMobilePlatform ? "agenda" : "grid";
+  });
   const [modalOpen, setModalOpen] = useState(false);
   const [holidayModalOpen, setHolidayModalOpen] = useState(false);
   const [confirmClearOpen, setConfirmClearOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<TimetableEntry | null>(null);
+  const [collapsedDays, setCollapsedDays] = useState<Record<string, boolean>>({});
+
+  const toggleDayCollapse = (dayKey: string) => {
+    setCollapsedDays((prev) => ({
+      ...prev,
+      [dayKey]: !prev[dayKey],
+    }));
+  };
+
+  const expandAllDays = () => {
+    setCollapsedDays({});
+  };
+
+  const collapseAllDays = () => {
+    const all: Record<string, boolean> = {};
+    DAYS.forEach((d) => {
+      all[d.key] = true;
+    });
+    setCollapsedDays(all);
+  };
+
+  const handlePrevDay = () => {
+    const dayKeys: DayOfWeek[] = ["Mo", "Di", "Mi", "Do", "Fr"];
+    if (selectedDay === "ALL") {
+      setSelectedDay(todayDayKey);
+      return;
+    }
+    const currentIndex = dayKeys.indexOf(selectedDay);
+    const prevIndex = (currentIndex - 1 + dayKeys.length) % dayKeys.length;
+    setSelectedDay(dayKeys[prevIndex]);
+  };
+
+  const handleNextDay = () => {
+    const dayKeys: DayOfWeek[] = ["Mo", "Di", "Mi", "Do", "Fr"];
+    if (selectedDay === "ALL") {
+      setSelectedDay(todayDayKey);
+      return;
+    }
+    const currentIndex = dayKeys.indexOf(selectedDay);
+    const nextIndex = (currentIndex + 1) % dayKeys.length;
+    setSelectedDay(dayKeys[nextIndex]);
+  };
 
   // Algorithmic Timetable Checker State
   const [checkerOpen, setCheckerOpen] = useState(false);
@@ -211,68 +284,54 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
     return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name, "de"));
   }, [savedSubjects, entries]);
 
-  // Form State
-  const [formData, setFormData] = useState<Partial<TimetableEntry>>({
-    day: "Mo",
-    period: 1,
-    time: "08:00 - 08:45",
-    subject: "",
-    teacher: "",
-    room: "",
-    targetClass: activeClass === "alle" ? "" : activeClass,
-    status: "regular",
-    color: "#2563eb",
-    note: "",
-  });
+  // Modal Parameters
+  const [modalInitialDay, setModalInitialDay] = useState<DayOfWeek>("Mo");
+  const [modalInitialPeriod, setModalInitialPeriod] = useState<number>(1);
 
   const handleOpenAdd = (day: DayOfWeek = "Mo", period: number = 1) => {
-    const periodObj = PERIOD_TIMES.find((p) => p.period === period);
     setEditingItem(null);
-    setFormData({
-      day,
-      period,
-      time: periodObj ? periodObj.time : "08:00 - 08:45",
-      subject: "",
-      teacher: "",
-      room: "",
-      targetClass: activeClass === "alle" ? (allClasses[0] || "") : activeClass,
-      status: "regular",
-      color: "#2563eb",
-      note: "",
-    });
+    setModalInitialDay(day);
+    setModalInitialPeriod(period);
     setModalOpen(true);
   };
 
   const handleOpenEdit = (entry: TimetableEntry) => {
     setEditingItem(entry);
-    setFormData({ 
-      ...entry,
-      color: entry.color || "#2563eb",
-    });
+    setModalInitialDay(entry.day);
+    setModalInitialPeriod(entry.period);
     setModalOpen(true);
   };
 
-  const handleSubmitForm = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.subject) return;
-
-    const trimmedClass = (formData.targetClass || "").trim();
-    if (trimmedClass && !customClasses.includes(trimmedClass)) {
-      const updated = [...customClasses, trimmedClass];
-      setCustomClasses(updated);
-      try {
-        localStorage.setItem("planpulse_custom_classes", JSON.stringify(updated));
-      } catch (err) {
-        console.error(err);
+  const handleSaveLesson = (entriesData: Partial<TimetableEntry>[], isDoubleLesson?: boolean) => {
+    entriesData.forEach((entryData) => {
+      const trimmedClass = (entryData.targetClass || "").trim();
+      if (trimmedClass && !customClasses.includes(trimmedClass)) {
+        const updated = [...customClasses, trimmedClass];
+        setCustomClasses(updated);
+        try {
+          localStorage.setItem("planpulse_custom_classes", JSON.stringify(updated));
+        } catch (err) {
+          console.error(err);
+        }
       }
-    }
 
-    if (editingItem) {
-      onEditEntry({ ...(editingItem as TimetableEntry), ...formData } as TimetableEntry);
-    } else {
-      onAddEntry(formData);
-    }
-    setModalOpen(false);
+      if (editingItem) {
+        onEditEntry({ ...(editingItem as TimetableEntry), ...entryData } as TimetableEntry);
+      } else {
+        onAddEntry(entryData);
+
+        // If user selected Doppelstunde, also insert the next hour
+        if (isDoubleLesson && (entryData.period || 1) < 8) {
+          const nextPeriod = (entryData.period || 1) + 1;
+          const nextTimeObj = PERIOD_TIMES.find((p) => p.period === nextPeriod);
+          onAddEntry({
+            ...entryData,
+            period: nextPeriod,
+            time: nextTimeObj ? nextTimeObj.time : undefined,
+          });
+        }
+      }
+    });
   };
 
   // Custom User Classes stored in localStorage
@@ -334,6 +393,29 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
     const matchesDay = selectedDay === "ALL" || entry.day === selectedDay;
     return matchesClass && matchesDay;
   });
+
+  // Calculate today's weekday
+  const todayDayKey: DayOfWeek = React.useMemo(() => {
+    const dayIndex = new Date().getDay(); // 0 = Sun, 1 = Mon ... 5 = Fri
+    if (dayIndex === 1) return "Mo";
+    if (dayIndex === 2) return "Di";
+    if (dayIndex === 3) return "Mi";
+    if (dayIndex === 4) return "Do";
+    if (dayIndex === 5) return "Fr";
+    return "Mo";
+  }, []);
+
+  // Compute lesson count per day for badges
+  const dayLessonCounts = React.useMemo(() => {
+    const counts: Record<DayOfWeek, number> = { Mo: 0, Di: 0, Mi: 0, Do: 0, Fr: 0 };
+    const classFiltered = entries.filter(
+      (e) => activeClass === "alle" || e.targetClass.toLowerCase() === activeClass.toLowerCase()
+    );
+    classFiltered.forEach((e) => {
+      if (counts[e.day] !== undefined) counts[e.day]++;
+    });
+    return counts;
+  }, [entries, activeClass]);
 
   // Stats calculation
   const regularCount = filteredEntries.filter((e) => e.status === "regular").length;
@@ -430,27 +512,94 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
 
             <div className="h-4 w-px bg-slate-800 mx-1 hidden sm:block" />
 
-            {/* Day Selector */}
+            {/* View Mode Switcher (Agenda / Mobile Cards vs Grid Table) */}
             <div className="flex items-center space-x-1 bg-slate-950 p-1 rounded-lg border border-slate-800">
               <button
-                onClick={() => setSelectedDay("ALL")}
-                className={`px-2.5 py-1 text-xs rounded font-medium transition-colors ${
-                  selectedDay === "ALL" ? "bg-slate-800 text-white" : "text-slate-400 hover:text-slate-200"
+                onClick={() => setViewMode("agenda")}
+                title="Tageskarten-Ansicht (Große Karten & Touch-optimiert)"
+                className={`flex items-center space-x-1.5 px-2.5 py-1 text-xs rounded font-semibold transition-all ${
+                  viewMode === "agenda"
+                    ? isMobilePlatform
+                      ? "bg-blue-600 text-white shadow-sm"
+                      : "bg-slate-800 text-white"
+                    : "text-slate-400 hover:text-slate-200"
                 }`}
               >
-                Woche (Mo-Fr)
+                <span>📱 Tageskarten</span>
               </button>
-              {DAYS.map((d) => (
-                <button
-                  key={d.key}
-                  onClick={() => setSelectedDay(d.key)}
-                  className={`px-2 py-1 text-xs rounded font-medium transition-colors ${
-                    selectedDay === d.key ? "bg-blue-600 text-white" : "text-slate-400 hover:text-slate-200"
-                  }`}
-                >
-                  {d.key}
-                </button>
-              ))}
+              <button
+                onClick={() => setViewMode("grid")}
+                title="Wochen-Tabelle (Kompaktes Raster)"
+                className={`flex items-center space-x-1.5 px-2.5 py-1 text-xs rounded font-semibold transition-all ${
+                  viewMode === "grid"
+                    ? "bg-slate-800 text-white shadow-sm"
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                <span>🗓️ Wochen-Raster</span>
+              </button>
+            </div>
+
+            <div className="h-4 w-px bg-slate-800 mx-1 hidden sm:block" />
+
+            {/* Smart Day Selector Bar */}
+            <div className="flex items-center space-x-1 bg-slate-950 p-1 rounded-xl border border-slate-800 overflow-x-auto max-w-full">
+              <button
+                onClick={() => setSelectedDay(todayDayKey)}
+                title={`Direkt zum heutigen Tag (${todayDayKey}) springen`}
+                className={`px-2.5 py-1 text-xs rounded-lg font-bold transition-all flex items-center space-x-1 ${
+                  selectedDay === todayDayKey
+                    ? "bg-blue-600 text-white shadow-sm"
+                    : "bg-slate-900 text-slate-300 hover:text-white hover:bg-slate-850"
+                }`}
+              >
+                <Sparkles className="w-3 h-3 text-amber-400" />
+                <span>Heute</span>
+              </button>
+
+              <div className="h-4 w-px bg-slate-800 mx-0.5" />
+
+              <button
+                onClick={() => setSelectedDay("ALL")}
+                className={`px-2.5 py-1 text-xs rounded-lg font-bold transition-all flex items-center space-x-1 ${
+                  selectedDay === "ALL" 
+                    ? "bg-slate-800 text-white shadow-sm ring-1 ring-slate-700" 
+                    : "text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                <span>Woche</span>
+                <span className="text-[10px] px-1 py-0.2 rounded bg-slate-900/80 font-mono text-slate-400">
+                  {filteredEntries.length}
+                </span>
+              </button>
+
+              {DAYS.map((d) => {
+                const isSelected = selectedDay === d.key;
+                const isToday = d.key === todayDayKey;
+                const count = dayLessonCounts[d.key] || 0;
+                return (
+                  <button
+                    key={d.key}
+                    onClick={() => setSelectedDay(d.key)}
+                    className={`px-2.5 py-1 text-xs rounded-lg font-bold transition-all flex items-center space-x-1 ${
+                      isSelected
+                        ? "bg-blue-600 text-white shadow-sm"
+                        : isToday
+                        ? "text-blue-400 hover:bg-slate-900"
+                        : "text-slate-400 hover:text-slate-200"
+                    }`}
+                  >
+                    <span>{d.key}</span>
+                    {count > 0 && (
+                      <span className={`text-[10px] px-1 rounded font-mono ${
+                        isSelected ? "bg-black/30 text-white" : "bg-slate-900 text-slate-400"
+                      }`}>
+                        {count}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
@@ -589,405 +738,640 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
         </div>
       )}
 
-      {/* Main Timetable Table */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse text-left min-w-[700px]">
-            <thead>
-              <tr className="border-b border-slate-800 bg-slate-950/60">
-                <th className="py-3 px-3 w-28 text-center text-xs font-bold text-slate-400 uppercase tracking-wider border-r border-slate-800/80">
-                  <div className="flex items-center justify-center space-x-1">
-                    <Clock className="w-3.5 h-3.5 text-blue-400" />
-                    <span>Stunde</span>
-                  </div>
-                </th>
-                {DAYS.filter((d) => selectedDay === "ALL" || d.key === selectedDay).map((dayObj) => (
-                  <th key={dayObj.key} className="py-3 px-3 text-xs font-bold text-slate-200 border-l border-slate-800/80">
-                    <div className="flex items-center justify-between">
-                      <span className="text-white">{dayObj.full}</span>
-                      <span className="text-[11px] font-mono text-slate-400">{dayObj.key}</span>
+      {/* Timetable Content: Single Day Focus vs Clean Weekly Matrix vs Compact Weekly Agenda */}
+      {selectedDay !== "ALL" ? (
+        /* SINGLE DAY FOCUS VIEW */
+        <div className="space-y-4">
+          {DAYS.filter((d) => d.key === selectedDay).map((dayObj) => {
+            const dayEntries = filteredEntries
+              .filter((e) => e.day === dayObj.key)
+              .sort((a, b) => a.period - b.period);
+            const hasAnyLessonThisDay = dayEntries.length > 0;
+            const isToday = dayObj.key === todayDayKey;
+
+            const dayEntriesByPeriod = PERIOD_TIMES.map((pt) => ({
+              period: pt.period,
+              time: pt.time,
+              entries: dayEntries.filter((e) => e.period === pt.period),
+            }));
+
+            return (
+              <div key={dayObj.key} className="space-y-3">
+                {/* Day Navigation Banner */}
+                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 sm:p-4 flex items-center justify-between shadow-md">
+                  <button
+                    onClick={handlePrevDay}
+                    className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold border border-slate-700/80 transition-all shadow-sm"
+                    title="Vorheriger Tag"
+                  >
+                    <ChevronLeft className="w-4 h-4 text-blue-400" />
+                    <span className="hidden sm:inline">Vorheriger Tag</span>
+                  </button>
+
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 rounded-xl bg-blue-600 text-white font-black text-sm flex items-center justify-center shadow-md shadow-blue-500/20">
+                      {dayObj.key}
                     </div>
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-800/60">
-              {PERIOD_TIMES.map((periodObj) => (
-                <tr key={periodObj.period} className="hover:bg-slate-850/40 transition-colors">
-                  {/* Period Time Column */}
-                  <td className="py-3 px-3 text-center bg-slate-950/40 border-r border-slate-800/80">
-                    <div className="font-bold text-white text-sm">{periodObj.period}. Std</div>
-                    <div className="text-[11px] text-slate-400 font-mono mt-0.5">{periodObj.time}</div>
-                  </td>
-
-                  {/* Days Columns */}
-                  {DAYS.filter((d) => selectedDay === "ALL" || d.key === selectedDay).map((dayObj) => {
-                    const cellEntries = filteredEntries.filter(
-                      (e) => e.day === dayObj.key && e.period === periodObj.period
-                    );
-
-                    return (
-                      <td key={dayObj.key} className="p-2 border-l border-slate-800/80 align-top h-28 relative group">
-                        {cellEntries.length === 0 ? (
-                          <div
-                            onClick={() => handleOpenAdd(dayObj.key, periodObj.period)}
-                            className="h-full w-full min-h-[5rem] rounded-lg border border-dashed border-slate-800 hover:border-slate-600 hover:bg-slate-800/30 flex items-center justify-center cursor-pointer transition-all opacity-40 hover:opacity-100"
-                          >
-                            <Plus className="w-4 h-4 text-slate-500 group-hover:text-blue-400" />
-                          </div>
-                        ) : (
-                          <div className="space-y-1.5">
-                            {cellEntries.map((entry) => (
-                              <LessonCard
-                                key={entry.id}
-                                entry={entry}
-                                onEdit={() => handleOpenEdit(entry)}
-                                onDelete={() => onDeleteEntry(entry.id)}
-                              />
-                            ))}
-                          </div>
+                    <div className="text-left">
+                      <div className="flex items-center space-x-2">
+                        <h3 className="text-base font-bold text-white tracking-tight">{dayObj.full}</h3>
+                        {isToday && (
+                          <span className="px-2 py-0.5 rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30 text-[10px] font-bold">
+                            Heute
+                          </span>
                         )}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                      </div>
+                      <p className="text-xs text-slate-400">
+                        {hasAnyLessonThisDay
+                          ? `${dayEntries.length} Unterrichtsstunde${dayEntries.length > 1 ? "n" : ""} geplant`
+                          : "Keine Stunden eingetragen"}
+                      </p>
+                    </div>
+                  </div>
 
-      {/* Add / Edit Lesson Modal */}
-      {modalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
-          <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl animate-in fade-in zoom-in-95 max-h-[90vh] overflow-y-auto">
-            <h3 className="text-lg font-bold text-white mb-4 flex items-center justify-between">
-              <span>{editingItem ? "Stunde bearbeiten" : "Neue Stunde eintragen"}</span>
-              <span className="text-xs font-normal text-slate-400">PlanPulse</span>
-            </h3>
-
-            <form onSubmit={handleSubmitForm} className="space-y-4 text-xs">
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-300 mb-1 font-medium">Wochentag</label>
-                  <select
-                    value={formData.day}
-                    onChange={(e) => setFormData({ ...formData, day: e.target.value as DayOfWeek })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-blue-500"
-                  >
-                    {DAYS.map((d) => (
-                      <option key={d.key} value={d.key}>{d.full}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-slate-300 mb-1 font-medium">Stunde & Zeit</label>
-                  <select
-                    value={formData.period}
-                    onChange={(e) => {
-                      const p = Number(e.target.value);
-                      const timeObj = PERIOD_TIMES.find((pt) => pt.period === p);
-                      setFormData({
-                        ...formData,
-                        period: p,
-                        time: timeObj ? timeObj.time : formData.time,
-                      });
-                    }}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-blue-500"
-                  >
-                    {PERIOD_TIMES.map((pt) => (
-                      <option key={pt.period} value={pt.period}>{pt.period}. Std ({pt.time})</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="block text-slate-300 font-medium text-xs">Schulfach *</label>
-                  <span className="text-[10px] text-blue-400 font-medium">
-                    Aus Liste wählen oder tippen
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {/* Dropdown Selector for all available subjects */}
-                  <div>
-                    <select
-                      value={
-                        availableSubjects.some((s) => s.name.toLowerCase() === (formData.subject || "").toLowerCase())
-                          ? availableSubjects.find((s) => s.name.toLowerCase() === (formData.subject || "").toLowerCase())?.name
-                          : formData.subject ? "__custom__" : ""
-                      }
-                      onChange={(e) => {
-                        const selectedVal = e.target.value;
-                        if (selectedVal === "__custom__") {
-                          // Keep existing text or clear for custom typing
-                        } else if (selectedVal) {
-                          const found = availableSubjects.find((s) => s.name === selectedVal);
-                          setFormData({
-                            ...formData,
-                            subject: selectedVal,
-                            color: found?.color || formData.color || "#2563eb",
-                            teacher: formData.teacher || found?.teacher || "",
-                            room: formData.room || found?.room || "",
-                          });
-                        }
-                      }}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-slate-100 font-semibold focus:outline-none focus:border-blue-500 text-xs"
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => setSelectedDay("ALL")}
+                      className="hidden md:flex items-center space-x-1 px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold border border-slate-700"
+                      title="Ganze Woche anzeigen"
                     >
-                      {availableSubjects.length > 0 ? (
-                        <option value="">-- Fach aus vorhandener Liste ({availableSubjects.length}) --</option>
-                      ) : (
-                        <option value="">-- Noch keine Fächer vorhanden --</option>
-                      )}
-                      {availableSubjects.map((s) => (
-                        <option key={s.name} value={s.name}>
-                          {s.name} {s.teacher ? `(${s.teacher})` : ""}
-                        </option>
-                      ))}
-                      <option value="__custom__">✏️ Anderer / Neuer Fachname...</option>
-                    </select>
-                  </div>
-
-                  {/* Input field with datalist for quick typing / auto-suggest */}
-                  <div>
-                    <input
-                      type="text"
-                      list="available-subjects-datalist"
-                      required
-                      placeholder={availableSubjects.length > 0 ? "Oder Fachname eintippen..." : "Fachname eintippen (z.B. Test)..."}
-                      value={formData.subject}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        const matching = availableSubjects.find((s) => s.name.toLowerCase() === val.toLowerCase());
-                        setFormData({
-                          ...formData,
-                          subject: val,
-                          ...(matching?.color ? { color: matching.color } : {}),
-                          ...(matching?.teacher && !formData.teacher ? { teacher: matching.teacher } : {}),
-                          ...(matching?.room && !formData.room ? { room: matching.room } : {}),
-                        });
-                      }}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-blue-500 text-xs"
-                    />
-                    {availableSubjects.length > 0 && (
-                      <datalist id="available-subjects-datalist">
-                        {availableSubjects.map((s) => (
-                          <option key={s.name} value={s.name} />
-                        ))}
-                      </datalist>
-                    )}
+                      <Layers className="w-3.5 h-3.5 text-blue-400" />
+                      <span>Woche</span>
+                    </button>
+                    <button
+                      onClick={handleNextDay}
+                      className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold border border-slate-700/80 transition-all shadow-sm"
+                      title="Nächster Tag"
+                    >
+                      <span className="hidden sm:inline">Nächster Tag</span>
+                      <ChevronRight className="w-4 h-4 text-blue-400" />
+                    </button>
                   </div>
                 </div>
 
-                {/* Quick-Pick Subject Badges (only if subjects exist) */}
-                {availableSubjects.length > 0 && (
-                  <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
-                    <span className="text-[10px] text-slate-500 font-medium">Vorhanden:</span>
-                    {availableSubjects.slice(0, 7).map((s) => {
-                      const isSelected = (formData.subject || "").toLowerCase() === s.name.toLowerCase();
+                {/* Day Lessons List (1..8 Periods) */}
+                <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl space-y-3">
+                  <div className="flex items-center justify-between pb-2.5 border-b border-slate-800">
+                    <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                      Stundenablauf ({dayObj.full})
+                    </span>
+                    <button
+                      onClick={() => handleOpenAdd(dayObj.key, 1)}
+                      className="flex items-center space-x-1 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-3 py-1.5 rounded-lg shadow-sm transition-all"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>+ Stunde</span>
+                    </button>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    {dayEntriesByPeriod.map((pObj) => {
+                      if (pObj.entries.length === 0) {
+                        return (
+                          <div
+                            key={pObj.period}
+                            onClick={() => handleOpenAdd(dayObj.key, pObj.period)}
+                            className="flex items-center justify-between p-3 rounded-xl border border-dashed border-slate-800 hover:border-slate-700 bg-slate-950/40 hover:bg-slate-850/40 cursor-pointer transition-all text-slate-500 hover:text-slate-300 group"
+                          >
+                            <div className="flex items-center space-x-3">
+                              <span className="w-7 text-center font-bold text-xs text-slate-400 bg-slate-900 py-1 rounded">
+                                {pObj.period}.
+                              </span>
+                              <span className="text-xs font-mono text-slate-500">{pObj.time}</span>
+                              <span className="text-xs italic text-slate-500 group-hover:text-slate-400">
+                                Freistunde
+                              </span>
+                            </div>
+                            <span className="text-xs font-semibold text-blue-400 group-hover:text-blue-300 flex items-center space-x-1">
+                              <Plus className="w-3.5 h-3.5" />
+                              <span>Stunde eintragen</span>
+                            </span>
+                          </div>
+                        );
+                      }
+
                       return (
-                        <button
-                          key={s.name}
-                          type="button"
-                          onClick={() => {
-                            setFormData({
-                              ...formData,
-                              subject: s.name,
-                              color: s.color || formData.color,
-                              teacher: formData.teacher || s.teacher || "",
-                              room: formData.room || s.room || "",
-                            });
-                          }}
-                          className={`px-2 py-0.5 rounded-lg text-[10px] font-bold border transition-all flex items-center space-x-1 ${
-                            isSelected
-                              ? "bg-blue-600 border-blue-500 text-white shadow-sm scale-105"
-                              : "bg-slate-950 border-slate-800 text-slate-400 hover:text-slate-200 hover:border-slate-700"
-                          }`}
-                        >
-                          <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: s.color }} />
-                          <span>{s.name}</span>
-                        </button>
+                        <div key={pObj.period} className="space-y-2">
+                          {pObj.entries.map((entry) => (
+                            <div
+                              key={entry.id}
+                              className="p-3.5 rounded-xl text-white shadow-md border relative overflow-hidden transition-all"
+                              style={{
+                                backgroundColor: entry.status === "cancelled" ? "#991b1b" : entry.color || "#2563eb",
+                                borderColor: "rgba(255,255,255,0.2)",
+                              }}
+                            >
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="space-y-1.5">
+                                  <div className="flex flex-wrap items-center gap-1.5">
+                                    <span className="px-2 py-0.5 rounded-md bg-black/40 text-xs font-mono font-bold text-white border border-white/20">
+                                      {entry.period}. Std • {entry.time}
+                                    </span>
+                                    {entry.targetClass && (
+                                      <span className="px-2 py-0.5 rounded bg-black/30 text-xs font-mono text-white/90">
+                                        Klasse {entry.targetClass}
+                                      </span>
+                                    )}
+                                    {entry.status === "cancelled" && (
+                                      <span className="px-2 py-0.5 rounded bg-black/60 text-xs font-bold text-rose-200 border border-rose-400">
+                                        ENTFALL
+                                      </span>
+                                    )}
+                                    {entry.status === "substituted" && (
+                                      <span className="px-2 py-0.5 rounded bg-black/60 text-xs font-bold text-amber-200 border border-amber-400">
+                                        VERTRETUNG
+                                      </span>
+                                    )}
+                                    {entry.status === "exam" && (
+                                      <span className="px-2 py-0.5 rounded bg-black/60 text-xs font-bold text-purple-200 border border-purple-400">
+                                        KLAUSUR
+                                      </span>
+                                    )}
+                                  </div>
+
+                                  <div className="text-xl font-black tracking-tight pt-0.5 drop-shadow-sm">
+                                    {entry.subject}
+                                  </div>
+
+                                  <div className="flex flex-wrap items-center gap-3 text-xs text-white/95 pt-0.5">
+                                    <span className="flex items-center space-x-1.5 font-medium">
+                                      <User className="w-3.5 h-3.5 text-white/80" />
+                                      <span>{entry.teacher || "Kein Lehrer"}</span>
+                                    </span>
+                                    <span className="flex items-center space-x-1.5 font-mono font-bold bg-black/35 px-2 py-0.5 rounded border border-white/15">
+                                      <MapPin className="w-3.5 h-3.5 text-white/80" />
+                                      <span>Raum: {entry.room || "—"}</span>
+                                    </span>
+                                  </div>
+
+                                  {entry.note && (
+                                    <p className="text-xs text-white/90 italic pt-1 border-t border-white/15 mt-1">
+                                      {entry.note}
+                                    </p>
+                                  )}
+                                </div>
+
+                                <div className="flex items-center space-x-1 bg-black/50 backdrop-blur-sm rounded-lg p-1 border border-white/20">
+                                  <button
+                                    onClick={() => handleOpenEdit(entry)}
+                                    title="Bearbeiten"
+                                    className="p-1.5 text-white hover:text-blue-300 rounded hover:bg-white/10 transition-colors"
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => onDeleteEntry(entry.id)}
+                                    title="Löschen"
+                                    className="p-1.5 text-white hover:text-rose-300 rounded hover:bg-white/10 transition-colors"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
                       );
                     })}
                   </div>
-                )}
-
-                {/* Target Class Input */}
-                <div className="pt-1">
-                  <label className="block text-slate-300 mb-1 font-medium text-xs">Klasse / Gruppe (optional)</label>
-                  <input
-                    type="text"
-                    placeholder="z.B. 10A, 11B (optional)"
-                    value={formData.targetClass || ""}
-                    onChange={(e) => setFormData({ ...formData, targetClass: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-blue-500 text-xs"
-                  />
                 </div>
               </div>
-
-              {/* Color Picker for Subject */}
+            );
+          })}
+        </div>
+      ) : viewMode === "grid" ? (
+        /* WHOLE WEEK: 5-COLUMN STRUCTURED WEEK MATRIX */
+        <div className="space-y-3">
+          {/* Week Mode Header Banner */}
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
+            <div className="flex items-center space-x-3">
+              <div className="w-9 h-9 rounded-xl bg-blue-600/20 text-blue-400 border border-blue-500/30 flex items-center justify-center font-black text-sm">
+                <Grid3X3 className="w-5 h-5" />
+              </div>
               <div>
-                <label className="block text-slate-300 mb-1.5 font-medium flex items-center justify-between">
-                  <span className="flex items-center space-x-1.5">
-                    <Palette className="w-3.5 h-3.5 text-blue-400" />
-                    <span>Farbe für das gesamte Feld</span>
+                <h3 className="text-sm sm:text-base font-bold text-white tracking-tight flex items-center space-x-2">
+                  <span>Wochen-Stundenplan (Mo – Fr)</span>
+                  <span className="px-2 py-0.5 rounded-full bg-blue-600/30 text-blue-300 text-[11px] font-mono font-semibold border border-blue-500/30">
+                    {filteredEntries.length} Stunden
                   </span>
-                  {formData.color && (
-                    <div className="flex items-center space-x-1.5">
-                      <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: formData.color }} />
-                      <span className="text-[10px] font-mono text-slate-400 uppercase">{formData.color}</span>
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Kompakte Matrix-Übersicht • Horizontales Wischen für alle 5 Schultage
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2 self-end sm:self-auto">
+              <button
+                onClick={() => setViewMode("agenda")}
+                className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white text-xs font-semibold border border-slate-700 transition-all"
+                title="Zur übersichtlichen Listen-Agenda wechseln"
+              >
+                <List className="w-3.5 h-3.5 text-blue-400" />
+                <span>Als Liste</span>
+              </button>
+              <button
+                onClick={() => setSelectedDay(todayDayKey)}
+                className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold shadow-sm transition-all"
+                title="Direkt zu Heute springen"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-amber-300" />
+                <span>Heute ({todayDayKey})</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Clean 5-Column Week Schedule Table with Sticky Headers */}
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl shadow-xl overflow-hidden">
+            <div className="overflow-x-auto select-none">
+              <table className="w-full border-collapse text-left min-w-[680px]">
+                <thead>
+                  <tr className="border-b border-slate-800 bg-slate-950/80 sticky top-0 z-10 backdrop-blur-sm">
+                    <th className="py-2.5 px-2.5 w-24 text-center text-xs font-bold text-slate-400 uppercase tracking-wider border-r border-slate-800/80 sticky left-0 z-20 bg-slate-950">
+                      <div className="flex items-center justify-center space-x-1">
+                        <Clock className="w-3.5 h-3.5 text-blue-400" />
+                        <span>Zeit</span>
+                      </div>
+                    </th>
+                    {DAYS.map((dayObj) => {
+                      const isToday = dayObj.key === todayDayKey;
+                      const count = dayLessonCounts[dayObj.key] || 0;
+                      return (
+                        <th
+                          key={dayObj.key}
+                          className={`py-2.5 px-2.5 text-xs font-bold border-l border-slate-800/80 transition-colors ${
+                            isToday ? "bg-blue-950/40 text-blue-300" : "text-slate-200"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-1.5">
+                              <button
+                                onClick={() => setSelectedDay(dayObj.key)}
+                                className="font-bold text-white hover:text-blue-400 text-xs flex items-center space-x-1 group"
+                                title={`Nur ${dayObj.full} anzeigen`}
+                              >
+                                <span className={`w-5 h-5 rounded text-[10px] font-black flex items-center justify-center ${
+                                  isToday ? "bg-blue-600 text-white" : "bg-slate-800 text-slate-300 group-hover:bg-blue-600 group-hover:text-white"
+                                }`}>
+                                  {dayObj.key}
+                                </span>
+                                <span>{dayObj.full}</span>
+                              </button>
+                            </div>
+                            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-850 text-slate-400 border border-slate-750">
+                              {count} Std
+                            </span>
+                          </div>
+                        </th>
+                      );
+                    })}
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-800/60">
+                  {PERIOD_TIMES.map((periodObj) => (
+                    <tr key={periodObj.period} className="hover:bg-slate-850/30 transition-colors">
+                      {/* Period Time Column (Sticky Left) */}
+                      <td className="py-2.5 px-2 text-center bg-slate-950/90 border-r border-slate-800/80 sticky left-0 z-10">
+                        <div className="font-bold text-white text-xs">{periodObj.period}. Std</div>
+                        <div className="text-[10px] text-slate-400 font-mono mt-0.5 leading-tight">{periodObj.time}</div>
+                      </td>
+
+                      {/* 5 Day Columns */}
+                      {DAYS.map((dayObj) => {
+                        const cellEntries = filteredEntries.filter(
+                          (e) => e.day === dayObj.key && e.period === periodObj.period
+                        );
+                        const isToday = dayObj.key === todayDayKey;
+
+                        return (
+                          <td
+                            key={dayObj.key}
+                            className={`p-1.5 border-l border-slate-800/80 align-top min-h-[4.5rem] relative group ${
+                              isToday ? "bg-blue-950/15" : ""
+                            }`}
+                          >
+                            {cellEntries.length === 0 ? (
+                              <div
+                                onClick={() => handleOpenAdd(dayObj.key, periodObj.period)}
+                                className="h-full min-h-[4rem] rounded-lg border border-dashed border-slate-800 hover:border-slate-600 hover:bg-slate-800/40 flex items-center justify-center cursor-pointer transition-all opacity-25 hover:opacity-100"
+                                title={`+ ${dayObj.full}, ${periodObj.period}. Stunde`}
+                              >
+                                <Plus className="w-3.5 h-3.5 text-slate-400 group-hover:text-blue-400" />
+                              </div>
+                            ) : (
+                              <div className="space-y-1">
+                                {cellEntries.map((entry) => (
+                                  <LessonCard
+                                    key={entry.id}
+                                    entry={entry}
+                                    onEdit={() => handleOpenEdit(entry)}
+                                    onDelete={() => onDeleteEntry(entry.id)}
+                                  />
+                                ))}
+                              </div>
+                            )}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      ) : (
+        /* WHOLE WEEK: COMPACT HIGH-DENSITY TIMELINE AGENDA (SUPER READABLE & ORGANIZED) */
+        <div className="space-y-3">
+          {/* Week Summary Header Banner */}
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-md">
+            <div className="flex items-center space-x-3">
+              <div className="w-9 h-9 rounded-xl bg-blue-600/20 text-blue-400 border border-blue-500/30 flex items-center justify-center font-black text-sm">
+                <List className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-sm sm:text-base font-bold text-white tracking-tight flex items-center space-x-2">
+                  <span>Wochen-Agenda (Mo – Fr)</span>
+                  <span className="px-2 py-0.5 rounded-full bg-blue-600/30 text-blue-300 text-[11px] font-mono font-semibold border border-blue-500/30">
+                    {filteredEntries.length} Stunden gesamt
+                  </span>
+                </h3>
+                <p className="text-xs text-slate-400">
+                  Strukturierte Tages-Zeitleiste • Schnell einklappen oder fokussieren
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-2 self-end sm:self-auto">
+              <button
+                onClick={expandAllDays}
+                className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold border border-slate-700 flex items-center space-x-1"
+                title="Alle Tage aufklappen"
+              >
+                <Eye className="w-3.5 h-3.5 text-blue-400" />
+                <span>Alle auf</span>
+              </button>
+              <button
+                onClick={collapseAllDays}
+                className="px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-semibold border border-slate-700 flex items-center space-x-1"
+                title="Alle Tage einklappen"
+              >
+                <EyeOff className="w-3.5 h-3.5 text-slate-400" />
+                <span>Alle zu</span>
+              </button>
+              <button
+                onClick={() => setViewMode("grid")}
+                className="flex items-center space-x-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-750 text-slate-300 hover:text-white text-xs font-semibold border border-slate-700 transition-all"
+                title="Zum Stundenplan-Raster wechseln"
+              >
+                <Grid3X3 className="w-3.5 h-3.5 text-blue-400" />
+                <span>Wochen-Raster</span>
+              </button>
+            </div>
+          </div>
+
+          {/* 5 Day Accordion Cards with Ultra-Clean High-Density Lesson Rows */}
+          <div className="space-y-3">
+            {DAYS.map((dayObj) => {
+              const dayEntries = filteredEntries
+                .filter((e) => e.day === dayObj.key)
+                .sort((a, b) => a.period - b.period);
+              const hasAnyLesson = dayEntries.length > 0;
+              const isToday = dayObj.key === todayDayKey;
+              const isCollapsed = !!collapsedDays[dayObj.key];
+
+              // Empty Day: Clean 1-line strip
+              if (!hasAnyLesson) {
+                return (
+                  <div
+                    key={dayObj.key}
+                    className="bg-slate-900/60 border border-slate-800/80 rounded-xl p-3 flex items-center justify-between transition-all hover:bg-slate-900"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 rounded-lg bg-slate-800 text-slate-400 border border-slate-700/60 flex items-center justify-center font-bold text-xs">
+                        {dayObj.key}
+                      </div>
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <span className="text-xs font-semibold text-slate-300">{dayObj.full}</span>
+                          {isToday && (
+                            <span className="text-[10px] font-bold text-blue-400 bg-blue-950/60 px-1.5 py-0.2 rounded border border-blue-800/40">
+                              Heute
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-slate-500">Keine Stunden eingetragen</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => handleOpenAdd(dayObj.key, 1)}
+                      className="flex items-center space-x-1 text-xs font-semibold text-blue-400 hover:text-blue-300 bg-blue-950/40 hover:bg-blue-900/50 border border-blue-800/40 px-2.5 py-1 rounded-lg transition-all"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>+ Stunde</span>
+                    </button>
+                  </div>
+                );
+              }
+
+              // Active Day Card
+              return (
+                <div
+                  key={dayObj.key}
+                  className={`bg-slate-900 border rounded-2xl transition-all shadow-md overflow-hidden ${
+                    isToday ? "border-blue-500/50 ring-1 ring-blue-500/20" : "border-slate-800"
+                  }`}
+                >
+                  {/* Day Header Row */}
+                  <div className="p-3 sm:p-4 flex items-center justify-between bg-slate-950/40 border-b border-slate-800/80">
+                    <div className="flex items-center space-x-3">
+                      <button
+                        onClick={() => setSelectedDay(dayObj.key)}
+                        className="group flex items-center space-x-2.5 text-left focus:outline-none"
+                        title={`Klicke, um nur ${dayObj.full} im Detail zu fokussieren`}
+                      >
+                        <div className={`w-8 h-8 rounded-xl font-black text-xs flex items-center justify-center transition-all ${
+                          isToday
+                            ? "bg-blue-600 text-white shadow-md shadow-blue-500/30"
+                            : "bg-blue-600/20 text-blue-400 border border-blue-500/30 group-hover:bg-blue-600 group-hover:text-white"
+                        }`}>
+                          {dayObj.key}
+                        </div>
+                        <div>
+                          <div className="flex items-center space-x-2">
+                            <span className="text-sm font-bold text-white group-hover:text-blue-300 transition-colors">
+                              {dayObj.full}
+                            </span>
+                            {isToday && (
+                              <span className="text-[10px] font-bold text-blue-300 bg-blue-950/80 px-2 py-0.5 rounded-full border border-blue-800/50">
+                                Heute
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[11px] text-slate-400">
+                            {dayEntries.length} Stunde{dayEntries.length > 1 ? "n" : ""} • {dayEntries[0]?.time?.split("-")[0] || "08:00"} bis {dayEntries[dayEntries.length - 1]?.time?.split("-")[1] || "13:15"} Uhr
+                          </span>
+                        </div>
+                      </button>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => handleOpenAdd(dayObj.key, (dayEntries[dayEntries.length - 1]?.period || 0) + 1)}
+                        className="flex items-center space-x-1 bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-blue-500/30 transition-all"
+                        title={`Stunde zu ${dayObj.full} hinzufügen`}
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span className="hidden sm:inline">Stunde</span>
+                      </button>
+                      <button
+                        onClick={() => toggleDayCollapse(dayObj.key)}
+                        className="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-slate-200 transition-colors"
+                        title={isCollapsed ? "Tag aufklappen" : "Tag einklappen"}
+                      >
+                        {isCollapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* If collapsed: Show brief subject chip preview */}
+                  {isCollapsed ? (
+                    <div
+                      onClick={() => toggleDayCollapse(dayObj.key)}
+                      className="p-3 bg-slate-900/40 hover:bg-slate-900 flex flex-wrap items-center gap-1.5 cursor-pointer transition-colors"
+                    >
+                      <span className="text-[11px] font-semibold text-slate-400 mr-1">Fächer:</span>
+                      {dayEntries.map((e) => (
+                        <span
+                          key={e.id}
+                          className="px-2 py-0.5 rounded-md text-[11px] font-semibold text-white border"
+                          style={{
+                            backgroundColor: e.color || "#2563eb",
+                            borderColor: "rgba(255,255,255,0.2)",
+                          }}
+                        >
+                          {e.period}. {e.subject}
+                        </span>
+                      ))}
+                      <span className="text-[11px] text-blue-400 font-medium ml-auto">Klicken zum Aufklappen ↓</span>
+                    </div>
+                  ) : (
+                    /* If expanded: Clean High-Density Structured Timeline Rows */
+                    <div className="divide-y divide-slate-800/60 p-2 sm:p-3 space-y-1.5">
+                      {dayEntries.map((entry) => {
+                        const isCancelled = entry.status === "cancelled";
+                        const isSubstituted = entry.status === "substituted";
+                        const isExam = entry.status === "exam";
+
+                        return (
+                          <div
+                            key={entry.id}
+                            className="flex flex-col sm:flex-row sm:items-center justify-between p-2.5 rounded-xl hover:bg-slate-850/50 transition-all border border-slate-800/40 gap-2"
+                          >
+                            {/* Left: Period Time Badge + Colored Subject Pill */}
+                            <div className="flex items-center space-x-2.5 flex-wrap gap-y-1">
+                              {/* Period & Time Pill */}
+                              <span className="px-2 py-1 rounded-lg bg-slate-950 text-slate-300 font-mono text-xs font-bold border border-slate-800 flex items-center space-x-1.5 flex-shrink-0">
+                                <span className="text-blue-400">{entry.period}. Std</span>
+                                <span className="text-slate-500 font-normal">|</span>
+                                <span className="text-slate-400 font-normal">{entry.time}</span>
+                              </span>
+
+                              {/* Colored Subject Pill */}
+                              <div
+                                className="px-2.5 py-1 rounded-lg text-white font-bold text-xs flex items-center space-x-1.5 shadow-sm border"
+                                style={{
+                                  backgroundColor: isCancelled ? "#991b1b" : entry.color || "#2563eb",
+                                  borderColor: "rgba(255,255,255,0.2)",
+                                }}
+                              >
+                                <span className={isCancelled ? "line-through opacity-80" : ""}>
+                                  {entry.subject}
+                                </span>
+                              </div>
+
+                              {/* Target Class if available */}
+                              {entry.targetClass && (
+                                <span className="px-2 py-0.5 rounded bg-slate-800 text-[11px] font-mono text-slate-300 border border-slate-700">
+                                  {entry.targetClass}
+                                </span>
+                              )}
+
+                              {/* Altered Status Badges */}
+                              {isCancelled && (
+                                <span className="px-2 py-0.5 rounded bg-rose-950 text-rose-300 border border-rose-800 font-bold text-[10px]">
+                                  ENTFALL
+                                </span>
+                              )}
+                              {isSubstituted && (
+                                <span className="px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-800 font-bold text-[10px]">
+                                  VERTRETUNG: {entry.substituteTeacher || entry.teacher}
+                                </span>
+                              )}
+                              {isExam && (
+                                <span className="px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800 font-bold text-[10px]">
+                                  KLAUSUR
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Right: Room, Teacher & Actions */}
+                            <div className="flex items-center justify-between sm:justify-end space-x-3 text-xs text-slate-400 pt-1 sm:pt-0">
+                              <div className="flex items-center space-x-3">
+                                <span className="flex items-center space-x-1 text-slate-300">
+                                  <User className="w-3.5 h-3.5 text-slate-500" />
+                                  <span>{entry.teacher || "—"}</span>
+                                </span>
+                                <span className="flex items-center space-x-1 font-mono font-bold bg-slate-950 px-2 py-0.5 rounded border border-slate-800 text-slate-300">
+                                  <MapPin className="w-3 h-3 text-blue-400" />
+                                  <span>{entry.room || "—"}</span>
+                                </span>
+                              </div>
+
+                              {/* Actions */}
+                              <div className="flex items-center space-x-1 bg-slate-950 rounded-lg p-0.5 border border-slate-800">
+                                <button
+                                  onClick={() => handleOpenEdit(entry)}
+                                  title="Bearbeiten"
+                                  className="p-1 text-slate-400 hover:text-blue-300 hover:bg-slate-800 rounded transition-colors"
+                                >
+                                  <Edit2 className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  onClick={() => onDeleteEntry(entry.id)}
+                                  title="Löschen"
+                                  className="p-1 text-slate-400 hover:text-rose-300 hover:bg-slate-800 rounded transition-colors"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
                     </div>
                   )}
-                </label>
-                <div className="flex flex-wrap items-center gap-1.5 bg-slate-950 p-2.5 rounded-xl border border-slate-800">
-                  {COLOR_PRESETS.map((p) => {
-                    const isSelected = (formData.color || "").toLowerCase() === p.color.toLowerCase();
-                    return (
-                      <button
-                        key={p.color}
-                        type="button"
-                        onClick={() => setFormData({ ...formData, color: p.color })}
-                        title={p.name}
-                        className={`w-6 h-6 rounded-full transition-transform flex items-center justify-center relative ${
-                          isSelected
-                            ? "scale-125 ring-2 ring-white ring-offset-2 ring-offset-slate-900 shadow-md"
-                            : "hover:scale-110 opacity-80 hover:opacity-100"
-                        }`}
-                        style={{ backgroundColor: p.color }}
-                      >
-                        {isSelected && <Check className="w-3.5 h-3.5 text-white stroke-[3]" />}
-                      </button>
-                    );
-                  })}
-                  <div className="flex items-center space-x-1 pl-2 border-l border-slate-800 ml-1">
-                    <input
-                      type="color"
-                      value={formData.color || "#2563eb"}
-                      onChange={(e) => setFormData({ ...formData, color: e.target.value })}
-                      className="w-7 h-7 rounded-lg cursor-pointer bg-transparent border border-slate-700 p-0.5"
-                      title="Eigene Hex-Farbe auswählen"
-                    />
-                    <span className="text-[10px] text-slate-400">Eigene</span>
-                  </div>
                 </div>
-
-                {/* Live Preview of complete colored card in modal */}
-                <div className="mt-2.5 p-2.5 rounded-xl bg-slate-950 border border-slate-800">
-                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center justify-between">
-                    <span>Live-Vorschau (Farbe des Feldes):</span>
-                    <span className="text-emerald-400">Vollfarbig</span>
-                  </div>
-                  <div
-                    className="p-3 rounded-xl border border-white/20 shadow-md text-white relative overflow-hidden"
-                    style={{ backgroundColor: formData.color || "#2563eb" }}
-                  >
-                    <div className="absolute inset-0 bg-gradient-to-b from-white/15 to-black/25 pointer-events-none" />
-                    <div className="relative z-10">
-                      <div className="flex items-center justify-between">
-                        <span className="font-bold text-sm drop-shadow-sm">{formData.subject || "Mathematik"}</span>
-                        <span className="text-[10px] font-mono px-1.5 py-0.5 bg-black/40 rounded border border-white/15">
-                          {formData.targetClass || "10A"}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between text-[11px] text-white/90 mt-2">
-                        <span className="truncate max-w-[65%]">{formData.teacher || "Hr. Becker"}</span>
-                        <span className="font-mono font-bold bg-black/30 px-1.5 py-0.5 rounded text-[10px]">
-                          {formData.room || "R102"}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-300 mb-1 font-medium">Lehrkraft / Dozent</label>
-                  <input
-                    type="text"
-                    placeholder="z.B. Hr. Becker"
-                    value={formData.teacher}
-                    onChange={(e) => setFormData({ ...formData, teacher: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-slate-300 mb-1 font-medium">Raum</label>
-                  <input
-                    type="text"
-                    placeholder="z.B. R102, Chemie-Labor"
-                    value={formData.room}
-                    onChange={(e) => setFormData({ ...formData, room: e.target.value })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-slate-300 mb-1 font-medium">Status</label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) => setFormData({ ...formData, status: e.target.value as LessonStatus })}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-blue-500"
-                  >
-                    <option value="regular">Regulär</option>
-                    <option value="substituted">Vertretung</option>
-                    <option value="cancelled">Entfall</option>
-                    <option value="room_changed">Raumänderung</option>
-                    <option value="exam">Klausur / Schulaufgabe</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-slate-300 mb-1 font-medium">Vertretungs-Lehrer / Neuer Raum</label>
-                  <input
-                    type="text"
-                    placeholder="Falls Vertretung / Neuer Raum"
-                    value={formData.substituteTeacher || formData.substituteRoom || ""}
-                    onChange={(e) => {
-                      if (formData.status === "room_changed") {
-                        setFormData({ ...formData, substituteRoom: e.target.value });
-                      } else {
-                        setFormData({ ...formData, substituteTeacher: e.target.value });
-                      }
-                    }}
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-slate-300 mb-1 font-medium">Hinweis / Hausaufgabe / Notiz</label>
-                <textarea
-                  rows={2}
-                  placeholder="z.B. Stillarbeit Arbeitsheft S. 45"
-                  value={formData.note || ""}
-                  onChange={(e) => setFormData({ ...formData, note: e.target.value })}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-lg p-2 text-slate-200 focus:outline-none focus:border-blue-500"
-                />
-              </div>
-
-              <div className="flex justify-end space-x-2 pt-3 border-t border-slate-800">
-                <button
-                  type="button"
-                  onClick={() => setModalOpen(false)}
-                  className="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium transition-colors"
-                >
-                  Abbrechen
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-semibold shadow-md transition-colors"
-                >
-                  {editingItem ? "Speichern" : "Hinzufügen"}
-                </button>
-              </div>
-            </form>
+              );
+            })}
           </div>
         </div>
       )}
+
+      {/* Dedicated Mobile & Desktop Lesson Entry Modal */}
+      <LessonEntryModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        editingItem={editingItem}
+        initialDay={modalInitialDay}
+        initialPeriod={modalInitialPeriod}
+        activeClass={activeClass}
+        allClasses={allClasses}
+        availableSubjects={availableSubjects}
+        existingEntries={entries}
+        onSave={handleSaveLesson}
+        devicePlatform={devicePlatform}
+      />
 
       {/* Confirm Clear Modal */}
       {confirmClearOpen && (

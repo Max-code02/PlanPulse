@@ -130,3 +130,5 @@ export interface SchoolPlanTemplate {
   entriesCount: number;
   entries: TimetableEntry[];
 }
+
+export type DevicePlatform = "pc" | "apple" | "android";

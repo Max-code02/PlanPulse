@@ -14,7 +14,8 @@ import {
   ShieldAlert,
   FileDown,
   Palmtree,
-  Smartphone
+  Smartphone,
+  Laptop
 } from "lucide-react";
 import { ActiveTab, UserConfig, AuthUser } from "../types";
 
@@ -24,6 +25,7 @@ interface HeaderProps {
   config: UserConfig;
   currentUser: AuthUser | null;
   onOpenAuthModal: () => void;
+  onOpenDeviceModal?: () => void;
   onUpgradeClick: () => void;
   isSyncing: boolean;
   onManualSync: () => void;
@@ -35,6 +37,7 @@ export const Header: React.FC<HeaderProps> = ({
   config,
   currentUser,
   onOpenAuthModal,
+  onOpenDeviceModal,
   onUpgradeClick,
   isSyncing,
   onManualSync,
@@ -114,16 +117,26 @@ export const Header: React.FC<HeaderProps> = ({
               <span className="hidden sm:inline">Live-Sync</span>
             </button>
 
+            {/* Device Switcher Button */}
+            {onOpenDeviceModal && (
+              <button
+                onClick={onOpenDeviceModal}
+                title="Gerät / Plattform wählen (PC, Apple iPhone, Handy Android)"
+                className="flex items-center space-x-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-all bg-slate-800 hover:bg-slate-750 text-purple-300 hover:text-purple-200 border border-slate-700 hover:border-purple-500/50"
+              >
+                <Laptop className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Gerät wählen</span>
+              </button>
+            )}
+
             {/* Android App Link */}
             <a
-              href="https://betadrop.app/app/gMbqiQ"
-              target="_blank"
-              rel="noopener noreferrer"
-              title="PlanPulse Android App (BetaDrop)"
+              href="/handyadriod.html"
+              title="PlanPulse Handy Android (APK & Download)"
               className="flex items-center space-x-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-all bg-slate-800 hover:bg-slate-750 text-emerald-400 border border-slate-700 hover:border-emerald-500/50"
             >
               <Smartphone className="w-3.5 h-3.5" />
-              <span className="hidden md:inline">App</span>
+              <span className="hidden md:inline">Handy</span>
             </a>
 
             {/* Quick Export Button */}

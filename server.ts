@@ -2878,6 +2878,18 @@ Gib eine präzise, hilfsbereite und direkt nutzbare Antwort auf Deutsch.`;
     <priority>0.6</priority>
   </url>
   <url>
+    <loc>https://plan-pulse-five.vercel.app/handyappel.html</loc>
+    <lastmod>2026-08-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://plan-pulse-five.vercel.app/handyadriod.html</loc>
+    <lastmod>2026-08-26</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
     <loc>https://plan-pulse-five.vercel.app/download/apk</loc>
     <lastmod>2026-08-23</lastmod>
     <changefreq>weekly</changefreq>
@@ -2930,17 +2942,43 @@ Sitemap: https://planpulse.mypi.co/sitemapurl
 Sitemap: https://plan-pulse-five.vercel.app/sitemap.xml
 Sitemap: https://plan-pulse-five.vercel.app/sitemapurl
 
+# Handy Editions
+# Apple iOS: https://plan-pulse-five.vercel.app/handyappel.html
+# Android: https://plan-pulse-five.vercel.app/handyadriod.html
+
 # PlanPulse Official Android App Downloads (APK)
 # Upload.app Direct APK: https://upload.app/download/planpulse/de.planpulse.app/38bba70ca599e71d1d6dbd6537748b602a06792dfe26ce991b8e41118a5f565b
 # BetaDrop App: https://betadrop.app/app/gMbqiQ
-
-# Official YouTube Channel & Shorts Videos
-# Channel: https://www.youtube.com/@PlanPulse-t5w/shorts
-# Short 1: https://www.youtube.com/shorts/2m0jz2Ol7zA
-# Short 2: https://www.youtube.com/shorts/93j80fc5hDs
-# Short 3: https://www.youtube.com/shorts/uGu4qeZTYKo
-# Short 4: https://www.youtube.com/shorts/z1NAiYe4DLY
 `);
+  });
+
+  // Dedicated Mobile & Device Pages
+  app.get(["/handyappel.html", "/handyappel", "/handyapple.html", "/handyapple", "/apple", "/handy/apple", "/app/apple"], (_req, res) => {
+    const file = path.join(process.cwd(), "handyappel.html");
+    if (fs.existsSync(file)) {
+      res.sendFile(file);
+    } else {
+      res.sendFile(path.join(process.cwd(), "dist", "index.html"));
+    }
+  });
+
+  app.get(["/handyadriod.html", "/handyadriod", "/handyandroid.html", "/handyandroid", "/android", "/handy/android", "/app/android"], (_req, res) => {
+    const file = path.join(process.cwd(), "handyadriod.html");
+    if (fs.existsSync(file)) {
+      res.sendFile(file);
+    } else {
+      res.sendFile(path.join(process.cwd(), "dist", "index.html"));
+    }
+  });
+
+  // Direct APK Download Redirect
+  app.get(["/download/apk", "/apk", "/planpulse.apk", "/download"], (_req, res) => {
+    res.redirect("https://upload.app/download/planpulse/de.planpulse.app/38bba70ca599e71d1d6dbd6537748b602a06792dfe26ce991b8e41118a5f565b");
+  });
+
+  // Direct BetaDrop App Redirect
+  app.get(["/betadrop", "/tester", "/beta"], (_req, res) => {
+    res.redirect("https://betadrop.app/app/gMbqiQ");
   });
 
   // Explicit JSON 404 for unhandled API routes so they never return HTML

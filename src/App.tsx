@@ -9,9 +9,11 @@ import { FreemiumBilling } from "./components/FreemiumBilling";
 import { AdminPanel } from "./components/AdminPanel";
 import { WatermarkBadge } from "./components/WatermarkBadge";
 import { AuthModal } from "./components/AuthModal";
+import { DeviceSelectorModal } from "./components/DeviceSelectorModal";
 import { ImpressumPage } from "./components/ImpressumPage";
 import { DatenschutzPage } from "./components/DatenschutzPage";
 import { BottomLegalBar } from "./components/BottomLegalBar";
+import { MobileBottomNav } from "./components/MobileBottomNav";
 import { 
   TimetableEntry, 
   SubstitutionNotice,
@@ -46,6 +48,51 @@ export default function App() {
     }
   });
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+
+  // Device Selection State (PC, Apple iOS, Android)
+  const [selectedDevice, setSelectedDevice] = useState<"pc" | "apple" | "android" | null>(() => {
+    try {
+      return (localStorage.getItem("planpulse_device_choice") as "pc" | "apple" | "android") || null;
+    } catch {
+      return null;
+    }
+  });
+  const [isDeviceModalOpen, setIsDeviceModalOpen] = useState(() => {
+    try {
+      // If user hasn't chosen or dismissed before, show on initial visit
+      const hasChosen = localStorage.getItem("planpulse_device_prompted");
+      return !hasChosen;
+    } catch {
+      return false;
+    }
+  });
+
+  const handleSelectDevice = (device: "pc" | "apple" | "android", remember: boolean) => {
+    setSelectedDevice(device);
+    setIsDeviceModalOpen(false);
+    try {
+      localStorage.setItem("planpulse_device_prompted", "true");
+      if (remember) {
+        localStorage.setItem("planpulse_device_choice", device);
+      }
+    } catch {
+      // ignore
+    }
+
+    if (device === "apple") {
+      showToast("🍎 Apple iOS Version ausgewählt. Leite weiter...");
+      setTimeout(() => {
+        window.location.href = "/handyappel.html";
+      }, 400);
+    } else if (device === "android") {
+      showToast("🤖 Android Version ausgewählt. Leite weiter...");
+      setTimeout(() => {
+        window.location.href = "/handyadriod.html";
+      }, 400);
+    } else {
+      showToast("💻 PC / Desktop-Ansicht aktiv.");
+    }
+  };
 
   // Synchronize route URLs and Page Titles with Dedicated Legal Pages (/impressum & /datenschutz)
   useEffect(() => {
@@ -418,9 +465,18 @@ export default function App() {
         config={userConfig}
         currentUser={currentUser}
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        onOpenDeviceModal={() => setIsDeviceModalOpen(true)}
         onUpgradeClick={() => handleNavigate("freemium")}
         isSyncing={isSyncing}
         onManualSync={fetchData}
+      />
+
+      {/* Device Selection Modal (PC vs Apple vs Android) */}
+      <DeviceSelectorModal
+        isOpen={isDeviceModalOpen}
+        onClose={() => setIsDeviceModalOpen(false)}
+        currentChoice={selectedDevice}
+        onSelectDevice={handleSelectDevice}
       />
 
       {/* Auth Modal (Email & Password Login / Register) */}
@@ -440,7 +496,7 @@ export default function App() {
       )}
 
       {/* Main Viewport Container */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-24 md:pb-8 flex-1 w-full">
         {activeTab === "timetable" && (
           <TimetableGrid
             entries={timetableEntries}
@@ -452,6 +508,7 @@ export default function App() {
             onOpenSchoolHub={() => handleNavigate("school_hub")}
             activeClass={filterClass}
             setActiveClass={setFilterClass}
+            devicePlatform={selectedDevice}
           />
         )}
 
@@ -530,7 +587,19 @@ export default function App() {
       />
 
       {/* Bottom Left Floating Quick-Access Bar */}
-      <BottomLegalBar onNavigate={handleNavigate} />
+      <BottomLegalBar 
+        onNavigate={handleNavigate} 
+        onOpenDeviceModal={() => setIsDeviceModalOpen(true)}
+      />
+
+      {/* Mobile Bottom Navigation Bar (Apple & Android optimized) */}
+      <MobileBottomNav
+        activeTab={activeTab}
+        setActiveTab={handleNavigate}
+        devicePlatform={selectedDevice}
+        onOpenAiParser={() => handleNavigate("ai")}
+        onOpenDeviceModal={() => setIsDeviceModalOpen(true)}
+      />
 
     </div>
   );
