@@ -69,17 +69,7 @@ export const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
               <div className="w-11 h-11 rounded-xl bg-blue-600/20 text-blue-400 border border-blue-500/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
                 <Monitor className="w-6 h-6" />
               </div>
-              <div>
-                <div className="flex items-center space-x-2">
-                  <span className="font-bold text-white text-sm sm:text-base">PC / Mac / Laptop</span>
-                  <span className="bg-slate-800 text-slate-300 text-[10px] font-semibold px-2 py-0.5 rounded border border-slate-750">
-                    index.html
-                  </span>
-                </div>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Vollständige Desktop-Ansicht mit Tastatur-Shortcuts, Noten- & Vertretungsplan
-                </p>
-              </div>
+              <span className="font-bold text-white text-base sm:text-lg">PC</span>
             </div>
             <ArrowRight className="w-5 h-5 text-slate-500 group-hover:text-blue-400 group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
           </button>
@@ -97,17 +87,7 @@ export const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
               <div className="w-11 h-11 rounded-xl bg-purple-600/20 text-purple-300 border border-purple-500/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
                 <span className="text-xl font-black"></span>
               </div>
-              <div>
-                <div className="flex items-center space-x-2">
-                  <span className="font-bold text-white text-sm sm:text-base">Handy Apple (iPhone / iPad)</span>
-                  <span className="bg-purple-500/20 text-purple-300 text-[10px] font-semibold px-2 py-0.5 rounded border border-purple-500/30">
-                    handyappel.html
-                  </span>
-                </div>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  iOS Home-Screen Installation, Safari-Anleitung & Touch-Optimierung
-                </p>
-              </div>
+              <span className="font-bold text-white text-base sm:text-lg">Apple</span>
             </div>
             <ArrowRight className="w-5 h-5 text-slate-500 group-hover:text-purple-400 group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
           </button>
@@ -125,17 +105,7 @@ export const DeviceSelectorModal: React.FC<DeviceSelectorModalProps> = ({
               <div className="w-11 h-11 rounded-xl bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
                 <Smartphone className="w-6 h-6" />
               </div>
-              <div>
-                <div className="flex items-center space-x-2">
-                  <span className="font-bold text-white text-sm sm:text-base">Handy Android</span>
-                  <span className="bg-emerald-500/20 text-emerald-300 text-[10px] font-semibold px-2 py-0.5 rounded border border-emerald-500/30">
-                    handyadriod.html
-                  </span>
-                </div>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Direkter APK-Download, BetaDrop App & Chrome PWA Installation
-                </p>
-              </div>
+              <span className="font-bold text-white text-base sm:text-lg">Android</span>
             </div>
             <ArrowRight className="w-5 h-5 text-slate-500 group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all shrink-0 ml-2" />
           </button>
