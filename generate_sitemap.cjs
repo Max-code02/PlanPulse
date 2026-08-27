@@ -12,15 +12,27 @@ const videos = [
 ];
 
 const staticPaths = [
+  // User explicitly requested Hash-URLs
   { path: '#timetable', priority: '0.9', freq: 'daily' },
-  { path: '#school-hub', priority: '0.8', freq: 'weekly' },
+  { path: '#school-hub', priority: '0.8', freq: 'daily' },
   { path: '#homework', priority: '0.8', freq: 'daily' },
   { path: '#grades', priority: '0.8', freq: 'weekly' },
   { path: '#ai-assistant', priority: '0.7', freq: 'weekly' },
   { path: '#billing', priority: '0.6', freq: 'monthly' },
+  
+  // App Routes & Features
   { path: 'download/apk', priority: '0.85', freq: 'weekly' },
   { path: 'betadrop', priority: '0.85', freq: 'weekly' },
+  
+  // Mobile Landing Pages (Tippfehler & Korrekte)
+  { path: 'handyandroid.html', priority: '0.8', freq: 'weekly' },
+  { path: 'handyapple.html', priority: '0.8', freq: 'weekly' },
+  { path: 'handyadriod.html', priority: '0.8', freq: 'weekly' },
+  { path: 'handyappel.html', priority: '0.8', freq: 'weekly' },
+  
+  // Legal & Text
   { path: 'impressum.html', priority: '0.6', freq: 'monthly' },
+  { path: 'impressium.html', priority: '0.6', freq: 'monthly' },
   { path: 'datenschutz.html', priority: '0.6', freq: 'monthly' },
   { path: 'robust.txt', priority: '0.3', freq: 'monthly' },
   { path: 'robots.txt', priority: '0.3', freq: 'monthly' }
@@ -34,7 +46,7 @@ function buildVideoTag(v) {
       <video:title>${v.title.replace(/&/g, '&amp;')}</video:title>
       <video:description>Entdecke PlanPulse für deinen Stundenplan, Vertretungsplan und Schulalltag.</video:description>
       <video:player_loc>https://www.youtube.com/embed/${v.id}</video:player_loc>
-      <video:publication_date>2026-08-01T08:00:00+02:00</video:publication_date>
+      <video:publication_date>2026-08-27T08:00:00+02:00</video:publication_date>
       <video:tag>PlanPulse</video:tag>
       <video:tag>${v.tag}</video:tag>
       <video:tag>Shorts</video:tag>
@@ -56,7 +68,7 @@ for (const domain of domains) {
   xml += `\n  <!-- ==================== Domain: ${domain.split('//')[1]} ==================== -->\n\n`;
   
   // Root URL with all 8 video tags embedded
-  xml += `  <url>\n    <loc>${domain}/</loc>\n    <lastmod>2026-08-27</lastmod>\n    <changefreq>daily</changefreq>\n    <priority>1.0</priority>\n`;
+  xml += `  <url>\n    <loc>${domain}/</loc>\n    <lastmod>2026-08-27</lastmod>\n    <changefreq>always</changefreq>\n    <priority>1.0</priority>\n`;
   for (const v of videos) {
     xml += buildVideoTag(v) + '\n';
   }
@@ -71,7 +83,7 @@ for (const domain of domains) {
   }
 
   // Other static pages
-  xml += `  <!-- App Sections -->\n`;
+  xml += `  <!-- App Sections & Unterseiten -->\n`;
   for (const p of staticPaths) {
     xml += `  <url>\n    <loc>${domain}/${p.path}</loc>\n    <lastmod>2026-08-27</lastmod>\n    <changefreq>${p.freq}</changefreq>\n    <priority>${p.priority}</priority>\n  </url>\n`;
   }
