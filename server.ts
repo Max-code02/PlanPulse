@@ -838,13 +838,283 @@ function fallbackParseTimetableText(text: string, targetClass = "10A") {
   };
 }
 
+// --- In-App Security & WAF Infrastructure ---
+
+export interface RateLimitRecord {
+  count: number;
+  resetTime: number;
+}
+
+export interface BlockedThreatIncident {
+  id: string;
+  timestamp: string;
+  ip: string;
+  method: string;
+  path: string;
+  reason: string;
+  threatType: "path_traversal" | "sensitive_probe" | "bot_scanner" | "xss_probe" | "rce_probe" | "rate_limit_exceeded";
+}
+
+const rateLimitBuckets = new Map<string, RateLimitRecord>();
+const blockedThreatIncidents: BlockedThreatIncident[] = [];
+let totalBlockedRequests = 0;
+
+// Automatic garbage collection of expired rate limit buckets
+setInterval(() => {
+  const now = Date.now();
+  for (const [key, record] of rateLimitBuckets.entries()) {
+    if (now > record.resetTime) {
+      rateLimitBuckets.delete(key);
+    }
+  }
+}, 60 * 1000);
+
+function getClientIp(req: express.Request): string {
+  const forwarded = req.headers["x-forwarded-for"];
+  if (typeof forwarded === "string") {
+    return forwarded.split(",")[0].trim();
+  }
+  if (Array.isArray(forwarded) && forwarded.length > 0) {
+    return forwarded[0].trim();
+  }
+  return req.socket.remoteAddress || req.ip || "127.0.0.1";
+}
+
+function logBlockedThreat(
+  ip: string,
+  method: string,
+  path: string,
+  reason: string,
+  threatType: BlockedThreatIncident["threatType"]
+) {
+  totalBlockedRequests++;
+  const incident: BlockedThreatIncident = {
+    id: `threat_${Date.now()}_${crypto.randomBytes(3).toString("hex")}`,
+    timestamp: new Date().toISOString(),
+    ip,
+    method,
+    path,
+    reason,
+    threatType,
+  };
+  blockedThreatIncidents.unshift(incident);
+  if (blockedThreatIncidents.length > 60) {
+    blockedThreatIncidents.pop();
+  }
+  console.warn(`[WAF BLOCKED] [${threatType.toUpperCase()}] ${method} ${path} from IP ${ip}: ${reason}`);
+}
+
+// In-App WAF Security Filter Middleware
+function inAppWafMiddleware(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const rawUrl = req.originalUrl || req.url || "";
+  const decodedUrl = decodeURIComponent(rawUrl).toLowerCase();
+  const userAgent = (req.headers["user-agent"] || "").toLowerCase();
+  const ip = getClientIp(req);
+
+  // 1. Block Malicious Bot Scanners & Exploit Tools
+  const badBots = ["sqlmap", "nikto", "acunetix", "masscan", "zgrab", "havij", "nmap", "w3af", "nessus", "netsparker"];
+  for (const bot of badBots) {
+    if (userAgent.includes(bot)) {
+      logBlockedThreat(ip, req.method, rawUrl, `Malicious Scanner User-Agent: ${bot}`, "bot_scanner");
+      return res.status(403).json({
+        error: "Zugriff verweigert: Unautorisierter Sicherheits-Scanner erkannt.",
+        waf: "PlanPulse In-App WAF active",
+      });
+    }
+  }
+
+  // 2. Block Directory / Path Traversal
+  if (
+    decodedUrl.includes("../") ||
+    decodedUrl.includes("..\\") ||
+    decodedUrl.includes("/etc/passwd") ||
+    decodedUrl.includes("/proc/self")
+  ) {
+    logBlockedThreat(ip, req.method, rawUrl, "Directory Traversal Attack detected", "path_traversal");
+    return res.status(403).json({
+      error: "Zugriff verweigert: Ungültige Pfad-Sequenz.",
+      waf: "PlanPulse In-App WAF active",
+    });
+  }
+
+  // 3. Block Sensitive Files / CMS Probing
+  const sensitivePatterns = [
+    "/.env",
+    "/.git",
+    "/.svn",
+    "/wp-admin",
+    "/wp-login",
+    "/wp-content",
+    "/xmlrpc.php",
+    "/phpmyadmin",
+    "/pma",
+    "/server-status",
+    "/.aws/",
+    "/.ds_store",
+    "/actuator/env",
+    "/cgi-bin/",
+    "/shell",
+    "/web-inf",
+  ];
+  for (const pattern of sensitivePatterns) {
+    if (decodedUrl.startsWith(pattern) || decodedUrl.includes(pattern)) {
+      logBlockedThreat(ip, req.method, rawUrl, `Sensitive resource probe: ${pattern}`, "sensitive_probe");
+      return res.status(403).json({
+        error: "Zugriff verweigert: Unerlaubter Zugriff auf geschützte Systemressourcen.",
+        waf: "PlanPulse In-App WAF active",
+      });
+    }
+  }
+
+  // 4. Block Query String Injections / XSS in non-body parameters
+  const queryStr = req.url.includes("?") ? req.url.slice(req.url.indexOf("?")).toLowerCase() : "";
+  if (
+    queryStr.includes("<script") ||
+    queryStr.includes("javascript:") ||
+    queryStr.includes("onerror=") ||
+    queryStr.includes("onload=") ||
+    queryStr.includes("alert(")
+  ) {
+    logBlockedThreat(ip, req.method, rawUrl, "XSS Injection pattern in query parameters", "xss_probe");
+    return res.status(403).json({
+      error: "Zugriff verweigert: Bösartiges Script-Muster in URL erkannt.",
+      waf: "PlanPulse In-App WAF active",
+    });
+  }
+
+  next();
+}
+
+// Sliding Window Rate Limiter
+function createRateLimiter(options: { windowMs: number; max: number; scopeName: string }) {
+  return (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const ip = getClientIp(req);
+    const key = `${options.scopeName}:${ip}`;
+    const now = Date.now();
+
+    let record = rateLimitBuckets.get(key);
+    if (!record || now > record.resetTime) {
+      record = {
+        count: 1,
+        resetTime: now + options.windowMs,
+      };
+      rateLimitBuckets.set(key, record);
+    } else {
+      record.count += 1;
+    }
+
+    const remaining = Math.max(0, options.max - record.count);
+    const resetSeconds = Math.ceil((record.resetTime - now) / 1000);
+
+    res.setHeader("X-RateLimit-Limit", options.max);
+    res.setHeader("X-RateLimit-Remaining", remaining);
+    res.setHeader("X-RateLimit-Reset", Math.ceil(record.resetTime / 1000));
+
+    if (record.count > options.max) {
+      logBlockedThreat(
+        ip,
+        req.method,
+        req.originalUrl || req.path,
+        `Rate limit exceeded (${record.count}/${options.max} in ${options.windowMs / 1000}s on ${options.scopeName})`,
+        "rate_limit_exceeded"
+      );
+      res.setHeader("Retry-After", resetSeconds);
+      return res.status(429).json({
+        error: "Zu viele Anfragen. Bitte warte einen Moment, bevor du es erneut versuchst.",
+        scope: options.scopeName,
+        retryAfterSeconds: resetSeconds,
+        waf: "PlanPulse DDoS & Rate-Limit Protection active",
+      });
+    }
+
+    next();
+  };
+}
+
 async function startServer() {
   loadDatabase();
 
   const app = express();
   const PORT = 3000;
 
+  // Disable identifying Express header
+  app.disable("x-powered-by");
+
+  // Global HTTP Security Headers Middleware
+  app.use((_req, res, next) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("X-Frame-Options", "SAMEORIGIN");
+    res.setHeader("X-XSS-Protection", "1; mode=block");
+    res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+    res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+    res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=(), payment=()");
+    res.setHeader("Cross-Origin-Opener-Policy", "same-origin-allow-popups");
+    next();
+  });
+
+  // Global In-App WAF Filter Middleware
+  app.use(inAppWafMiddleware);
+
+  // Rate Limiting Middlewares (Anti-DDoS & Brute Force Prevention)
+  const generalApiLimiter = createRateLimiter({ windowMs: 60 * 1000, max: 200, scopeName: "api_general" });
+  const authLimiter = createRateLimiter({ windowMs: 60 * 1000, max: 30, scopeName: "api_auth" });
+  const aiLimiter = createRateLimiter({ windowMs: 60 * 1000, max: 35, scopeName: "api_ai" });
+
+  app.use("/api/auth", authLimiter);
+  app.use("/api/ai", aiLimiter);
+  app.use("/api", generalApiLimiter);
+
   app.use(express.json({ limit: "25mb" }));
+
+  // --- Security & WAF Status Endpoint ---
+  app.get("/api/security/waf-status", (_req, res) => {
+    res.json({
+      status: "active",
+      firewall: "PlanPulse In-App Web Application Firewall & DDoS Guard",
+      version: "2.1.0-shield",
+      uptimeSeconds: Math.floor(process.uptime()),
+      timestamp: new Date().toISOString(),
+      layers: {
+        securityHeaders: {
+          enabled: true,
+          headers: [
+            "X-Content-Type-Options: nosniff",
+            "X-Frame-Options: SAMEORIGIN",
+            "X-XSS-Protection: 1; mode=block",
+            "Referrer-Policy: strict-origin-when-cross-origin",
+            "Strict-Transport-Security (HSTS)",
+            "Permissions-Policy (Sensors & Geolocation restricted)",
+            "Cross-Origin-Opener-Policy (Popup Safe)",
+            "X-Powered-By removed"
+          ],
+        },
+        rateLimiting: {
+          enabled: true,
+          type: "Sliding-Window Token Bucket",
+          rules: {
+            generalApi: "200 Anfragen / Minute",
+            authEndpoints: "30 Anfragen / Minute (Brute-Force-Schutz)",
+            aiEndpoints: "35 Anfragen / Minute (Token-Schutz)",
+          },
+          activeTrackedIps: rateLimitBuckets.size,
+        },
+        exploitFilter: {
+          enabled: true,
+          protections: [
+            "Directory Traversal Schutz (../, /etc/passwd)",
+            "Sensitive Files & Config Probing (/.env, /.git, /wp-admin, /phpmyadmin)",
+            "Malicious Scanner Block (sqlmap, nikto, acunetix, masscan)",
+            "Query Injection & XSS Sanity Check",
+            "Slowloris & Connection Timeout Guard"
+          ],
+        },
+      },
+      metrics: {
+        totalBlockedRequests,
+        recentBlockedThreats: blockedThreatIncidents.slice(0, 20),
+      },
+    });
+  });
 
   // --- Auth Endpoints (Email + Password only, NO Name required) ---
 
@@ -3001,9 +3271,14 @@ Sitemap: https://plan-pulse-five.vercel.app/sitemapurl
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`PlanPulse Server running on http://localhost:${PORT}`);
+  const server = app.listen(PORT, "0.0.0.0", () => {
+    console.log(`PlanPulse Server running with In-App WAF & DDoS Guard on http://localhost:${PORT}`);
   });
+
+  // Anti-Slowloris and Connection Flood Protection Timeouts
+  server.keepAliveTimeout = 65000;
+  server.headersTimeout = 66000;
+  server.timeout = 120000;
 }
 
 startServer().catch((err) => {

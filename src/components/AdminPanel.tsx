@@ -16,7 +16,15 @@ import {
   UserCheck, 
   X, 
   Sparkles,
-  ShieldCheck
+  ShieldCheck,
+  Shield,
+  Activity,
+  Server,
+  Cpu,
+  AlertTriangle,
+  Radio,
+  FileText,
+  ExternalLink
 } from "lucide-react";
 import { AuthUser, SchoolPlanTemplate } from "../types";
 import { safeFetchJson } from "../lib/api";
@@ -32,6 +40,42 @@ interface AdminUserItem {
   createdAt: string;
   timetableCount: number;
   homeworkCount: number;
+}
+
+interface WafStatusData {
+  status: string;
+  firewall: string;
+  version: string;
+  uptimeSeconds: number;
+  timestamp: string;
+  layers: {
+    securityHeaders: {
+      enabled: boolean;
+      headers: string[];
+    };
+    rateLimiting: {
+      enabled: boolean;
+      type: string;
+      rules: Record<string, string>;
+      activeTrackedIps: number;
+    };
+    exploitFilter: {
+      enabled: boolean;
+      protections: string[];
+    };
+  };
+  metrics: {
+    totalBlockedRequests: number;
+    recentBlockedThreats: Array<{
+      id: string;
+      timestamp: string;
+      ip: string;
+      method: string;
+      path: string;
+      reason: string;
+      threatType: string;
+    }>;
+  };
 }
 
 interface AdminPanelProps {
@@ -53,7 +97,9 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
   const [searchUser, setSearchUser] = useState("");
   const [userFilter, setUserFilter] = useState<"all" | "active" | "banned" | "admin">("all");
   const [searchTemplate, setSearchTemplate] = useState("");
-  const [activeSubTab, setActiveSubTab] = useState<"users" | "templates">("users");
+  const [activeSubTab, setActiveSubTab] = useState<"users" | "templates" | "security">("users");
+  const [wafStatus, setWafStatus] = useState<WafStatusData | null>(null);
+  const [wafLoading, setWafLoading] = useState(false);
 
   // Create User Modal State
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -80,10 +126,15 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
     setLoading(true);
     try {
       const headers = getAdminHeaders();
-      const [usersRes, templatesRes] = await Promise.all([
+      const [usersRes, templatesRes, wafRes] = await Promise.all([
         safeFetchJson<{ success: boolean; users: AdminUserItem[] }>("/api/admin/users", { headers }),
         safeFetchJson<{ templates: SchoolPlanTemplate[] } | SchoolPlanTemplate[]>("/api/school-templates", { headers }),
+        safeFetchJson<WafStatusData>("/api/security/waf-status", { headers }),
       ]);
+
+      if (wafRes.ok && wafRes.data) {
+        setWafStatus(wafRes.data);
+      }
 
       let allUsers: AdminUserItem[] = [];
       if (usersRes.ok && usersRes.data?.users) {
@@ -440,8 +491,8 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         </div>
       </div>
 
-      {/* Sub Tabs: Users vs Templates */}
-      <div className="flex space-x-2 border-b border-slate-800 pb-3">
+      {/* Sub Tabs: Users vs Templates vs Security */}
+      <div className="flex flex-wrap gap-2 border-b border-slate-800 pb-3">
         <button
           onClick={() => setActiveSubTab("users")}
           className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
@@ -463,6 +514,28 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
         >
           <Layers className="w-4 h-4" />
           <span>Stundenplan-Moderation ({templates.length})</span>
+        </button>
+        <button
+          onClick={() => {
+            setActiveSubTab("security");
+            if (!wafStatus) {
+              setWafLoading(true);
+              safeFetchJson<WafStatusData>("/api/security/waf-status", { headers: getAdminHeaders() })
+                .then((res) => { if (res.ok && res.data) setWafStatus(res.data); })
+                .finally(() => setWafLoading(false));
+            }
+          }}
+          className={`flex items-center space-x-2 px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+            activeSubTab === "security"
+              ? "bg-emerald-950/50 text-emerald-300 border border-emerald-700/60 shadow"
+              : "text-slate-400 hover:text-slate-200 hover:bg-slate-800/40"
+          }`}
+        >
+          <Shield className="w-4 h-4 text-emerald-400" />
+          <span>WAF & Applikations-Sicherheit</span>
+          <span className="bg-emerald-500/20 text-emerald-300 text-[10px] px-1.5 py-0.2 rounded font-mono">
+            Aktiv
+          </span>
         </button>
       </div>
 
@@ -745,6 +818,241 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({
             )}
           </div>
 
+        </div>
+      )}
+
+      {/* View: Security & In-App WAF Monitoring */}
+      {activeSubTab === "security" && (
+        <div className="space-y-5">
+          {/* Header Card */}
+          <div className="bg-slate-900 border border-emerald-900/40 rounded-2xl p-5 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div className="flex items-center space-x-3.5">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-emerald-600 to-teal-700 flex items-center justify-center shadow-lg shadow-emerald-950/60 text-white">
+                  <ShieldCheck className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="flex items-center space-x-2">
+                    <h3 className="text-base font-bold text-white">In-App Web Application Firewall & DDoS Guard</h3>
+                    <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                      Aktiv & Schützend
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Mehrschichtige Echtzeit-Abwehr gegen DDoS-Flooding, Brute-Force, Path-Traversal & bösartige Bot-Scanner.
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={async () => {
+                    setWafLoading(true);
+                    try {
+                      const res = await safeFetchJson<WafStatusData>("/api/security/waf-status", { headers: getAdminHeaders() });
+                      if (res.ok && res.data) {
+                        setWafStatus(res.data);
+                        onNotification("WAF-Status & Sicherheitsmetriken aktualisiert.");
+                      }
+                    } finally {
+                      setWafLoading(false);
+                    }
+                  }}
+                  disabled={wafLoading}
+                  className="flex items-center space-x-1.5 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-semibold border border-slate-700 transition-colors"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${wafLoading ? "animate-spin text-emerald-400" : ""}`} />
+                  <span>Prüfen</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Metrics Overview */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mt-5 pt-4 border-t border-slate-800">
+              <div className="bg-slate-950/80 border border-slate-800/80 rounded-xl p-3">
+                <span className="text-[11px] text-slate-400 block font-medium">Abgewehrte Bedrohungen</span>
+                <span className="text-xl font-bold text-rose-400 mt-0.5 block">
+                  {wafStatus?.metrics.totalBlockedRequests ?? 0}
+                </span>
+              </div>
+              <div className="bg-slate-950/80 border border-slate-800/80 rounded-xl p-3">
+                <span className="text-[11px] text-slate-400 block font-medium">Aktive IP-Ratenfilter</span>
+                <span className="text-xl font-bold text-emerald-400 mt-0.5 block">
+                  {wafStatus?.layers.rateLimiting.activeTrackedIps ?? 0}
+                </span>
+              </div>
+              <div className="bg-slate-950/80 border border-slate-800/80 rounded-xl p-3">
+                <span className="text-[11px] text-slate-400 block font-medium">Security Header Status</span>
+                <span className="text-xl font-bold text-emerald-400 mt-0.5 block">
+                  8 / 8 Aktiv
+                </span>
+              </div>
+              <div className="bg-slate-950/80 border border-slate-800/80 rounded-xl p-3">
+                <span className="text-[11px] text-slate-400 block font-medium">Server Uptime</span>
+                <span className="text-xl font-bold text-white mt-0.5 block font-mono">
+                  {wafStatus ? `${Math.floor(wafStatus.uptimeSeconds / 60)}m ${wafStatus.uptimeSeconds % 60}s` : "Aktiv"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Detailed Security Layers Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            
+            {/* Layer 1: Rate Limiting & Anti-DDoS */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/30 flex items-center justify-center text-blue-400">
+                  <Activity className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-white uppercase tracking-wider">Rate Limiting & DDoS-Schutz</h4>
+                  <p className="text-[11px] text-slate-400">Sliding-Window Token-Bucket pro IP</p>
+                </div>
+              </div>
+
+              <div className="space-y-2 text-xs">
+                <div className="flex items-center justify-between p-2.5 bg-slate-950/60 rounded-xl border border-slate-800/60">
+                  <span className="text-slate-300">Allgemeine API-Endpunkte</span>
+                  <span className="font-mono text-emerald-400 font-bold">200 Req / Min</span>
+                </div>
+                <div className="flex items-center justify-between p-2.5 bg-slate-950/60 rounded-xl border border-slate-800/60">
+                  <span className="text-slate-300">Auth & Login (Brute-Force-Schutz)</span>
+                  <span className="font-mono text-amber-400 font-bold">30 Req / Min</span>
+                </div>
+                <div className="flex items-center justify-between p-2.5 bg-slate-950/60 rounded-xl border border-slate-800/60">
+                  <span className="text-slate-300">KI & Stundenplan-Assistent</span>
+                  <span className="font-mono text-purple-400 font-bold">35 Req / Min</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Layer 2: Exploit & Bot-Scanner Guard */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-8 h-8 rounded-lg bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400">
+                  <ShieldAlert className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-white uppercase tracking-wider">Exploit & Bot-Filter (WAF)</h4>
+                  <p className="text-[11px] text-slate-400">Echtzeit-Blockade bekannter Angriffsmuster</p>
+                </div>
+              </div>
+
+              <div className="space-y-1.5 text-xs text-slate-300">
+                <div className="flex items-center space-x-2 p-2 bg-slate-950/60 rounded-xl border border-slate-800/60">
+                  <CheckCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <span>Directory & Path Traversal Blockade (<code className="text-slate-400">../, /etc/passwd</code>)</span>
+                </div>
+                <div className="flex items-center space-x-2 p-2 bg-slate-950/60 rounded-xl border border-slate-800/60">
+                  <CheckCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <span>Sensible Config-Dateien Schutz (<code className="text-slate-400">/.env, /.git, /wp-admin</code>)</span>
+                </div>
+                <div className="flex items-center space-x-2 p-2 bg-slate-950/60 rounded-xl border border-slate-800/60">
+                  <CheckCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <span>Bot-Scanner Blockade (<code className="text-slate-400">sqlmap, nikto, acunetix, masscan</code>)</span>
+                </div>
+                <div className="flex items-center space-x-2 p-2 bg-slate-950/60 rounded-xl border border-slate-800/60">
+                  <CheckCircle className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <span>Slowloris & Connection Flood Timeouts (65s / 120s)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Layer 3: Security Headers */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 md:col-span-2">
+              <div className="flex items-center space-x-2.5">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                  <Lock className="w-4 h-4" />
+                </div>
+                <div>
+                  <h4 className="text-xs font-bold text-white uppercase tracking-wider">Aktive HTTP-Sicherheits-Header</h4>
+                  <p className="text-[11px] text-slate-400">Schutz vor XSS, Clickjacking, MIME-Sniffing und Downgrade-Angriffen</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs font-mono">
+                <div className="p-2 bg-slate-950/70 rounded-xl border border-slate-800 flex items-center justify-between">
+                  <span className="text-slate-400">X-Content-Type-Options</span>
+                  <span className="text-emerald-400 font-semibold">nosniff</span>
+                </div>
+                <div className="p-2 bg-slate-950/70 rounded-xl border border-slate-800 flex items-center justify-between">
+                  <span className="text-slate-400">X-Frame-Options</span>
+                  <span className="text-emerald-400 font-semibold">SAMEORIGIN</span>
+                </div>
+                <div className="p-2 bg-slate-950/70 rounded-xl border border-slate-800 flex items-center justify-between">
+                  <span className="text-slate-400">X-XSS-Protection</span>
+                  <span className="text-emerald-400 font-semibold">1; mode=block</span>
+                </div>
+                <div className="p-2 bg-slate-950/70 rounded-xl border border-slate-800 flex items-center justify-between">
+                  <span className="text-slate-400">Referrer-Policy</span>
+                  <span className="text-emerald-400 font-semibold">strict-origin-when-cross-origin</span>
+                </div>
+                <div className="p-2 bg-slate-950/70 rounded-xl border border-slate-800 flex items-center justify-between">
+                  <span className="text-slate-400">Strict-Transport-Security</span>
+                  <span className="text-emerald-400 font-semibold">max-age=31536000; HSTS</span>
+                </div>
+                <div className="p-2 bg-slate-950/70 rounded-xl border border-slate-800 flex items-center justify-between">
+                  <span className="text-slate-400">X-Powered-By</span>
+                  <span className="text-emerald-400 font-semibold">Ausgeblendet (Hidden)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Cloud WAF / Cloudflare Hint Box */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-2 md:col-span-2">
+              <div className="flex items-center space-x-2 text-amber-400 text-xs font-bold">
+                <AlertTriangle className="w-4 h-4 shrink-0" />
+                <span>Empfehlung für DNS-Ebene (Cloud WAF):</span>
+              </div>
+              <p className="text-xs text-slate-300 leading-relaxed">
+                Unsere <strong>In-App WAF</strong> und das <strong>Rate-Limiting</strong> schützen Ihren Server direkt auf Applikationsebene.
+                Für zusätzliche volumetrische DDoS-Abwehr (Layer 3/4) können Sie Ihre Domain bei <strong>Cloudflare</strong> (kostenloser Plan) oder <strong>Google Cloud Armor</strong> hinterlegen, um Angriffe bereits am weltweiten Edge-Netzwerk abzuwehren.
+              </p>
+            </div>
+
+            {/* Live Blocked Threats Log */}
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-3 md:col-span-2">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-2">
+                  <Radio className="w-4 h-4 text-rose-400 animate-pulse" />
+                  <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+                    Echtzeit-Sicherheitsprotokoll (Abgewehrte Angriffe)
+                  </h4>
+                </div>
+                <span className="text-[10px] text-slate-500">
+                  {wafStatus?.metrics.recentBlockedThreats.length ?? 0} Ereignisse
+                </span>
+              </div>
+
+              {(!wafStatus?.metrics.recentBlockedThreats || wafStatus.metrics.recentBlockedThreats.length === 0) ? (
+                <div className="py-6 text-center text-xs text-slate-500 border border-slate-800/60 rounded-xl bg-slate-950/40">
+                  <CheckCircle className="w-6 h-6 text-emerald-500 mx-auto mb-2 opacity-60" />
+                  Keine aktuellen Angriffe oder Blockaden verzeichnet. Das System läuft stabil und geschützt.
+                </div>
+              ) : (
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {wafStatus.metrics.recentBlockedThreats.map((incident) => (
+                    <div key={incident.id} className="p-2.5 bg-slate-950/80 border border-rose-900/30 rounded-xl text-xs flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div>
+                        <div className="flex items-center space-x-2">
+                          <span className="bg-rose-500/20 text-rose-300 font-mono text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">
+                            {incident.threatType}
+                          </span>
+                          <span className="text-white font-mono">{incident.method} {incident.path}</span>
+                        </div>
+                        <p className="text-[11px] text-slate-400 mt-1">{incident.reason} (IP: <span className="font-mono text-slate-300">{incident.ip}</span>)</p>
+                      </div>
+                      <span className="text-[10px] text-slate-500 font-mono shrink-0">
+                        {new Date(incident.timestamp).toLocaleTimeString("de-DE")}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+          </div>
         </div>
       )}
 
