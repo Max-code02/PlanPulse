@@ -22,16 +22,6 @@ interface Journey {
   }[];
 }
 
-const FALLBACK_STATIONS = [
-  { id: "fallback_1", name: "Würzburg Hbf" },
-  { id: "fallback_2", name: "Würzburg Sanderring" },
-  { id: "fallback_3", name: "Würzburg Juliuspromenade" },
-  { id: "fallback_4", name: "Würzburg Rathaus" },
-  { id: "fallback_5", name: "Würzburg Hubland Mensa" },
-  { id: "fallback_6", name: "Würzburg Wittelsbacherplatz" },
-  { id: "fallback_7", name: "Würzburg Busbahnhof" }
-];
-
 export const TransitModal: React.FC<TransitModalProps> = ({ isOpen, onClose }) => {
   const [fromQuery, setFromQuery] = useState("");
   const [toQuery, setToQuery] = useState("");
@@ -59,19 +49,12 @@ export const TransitModal: React.FC<TransitModalProps> = ({ isOpen, onClose }) =
       setIsSearchingFrom(true);
       try {
         const res = await fetch(`https://v6.db.transport.rest/locations?query=${encodeURIComponent(fromQuery)}&results=5`);
-        if (!res.ok) throw new Error("API Offline");
+        if (!res.ok) throw new Error("API-Verbindungsfehler");
         const data = await res.json();
         const results = data.filter((d: any) => d.id && d.name).slice(0, 5);
-        if (results.length > 0) {
-           setFromSuggestions(results);
-        } else {
-           throw new Error("Empty");
-        }
+        setFromSuggestions(results);
       } catch (err) {
-        // Fallback for Würzburg
-        setFromSuggestions(
-          FALLBACK_STATIONS.filter(s => s.name.toLowerCase().includes(fromQuery.toLowerCase()))
-        );
+        setFromSuggestions([{ id: "error", name: "⚠️ API derzeit nicht erreichbar" }]);
       } finally {
         setIsSearchingFrom(false);
       }
@@ -89,19 +72,12 @@ export const TransitModal: React.FC<TransitModalProps> = ({ isOpen, onClose }) =
       setIsSearchingTo(true);
       try {
         const res = await fetch(`https://v6.db.transport.rest/locations?query=${encodeURIComponent(toQuery)}&results=5`);
-        if (!res.ok) throw new Error("API Offline");
+        if (!res.ok) throw new Error("API-Verbindungsfehler");
         const data = await res.json();
         const results = data.filter((d: any) => d.id && d.name).slice(0, 5);
-        if (results.length > 0) {
-           setToSuggestions(results);
-        } else {
-           throw new Error("Empty");
-        }
+        setToSuggestions(results);
       } catch (err) {
-        // Fallback for Würzburg
-        setToSuggestions(
-          FALLBACK_STATIONS.filter(s => s.name.toLowerCase().includes(toQuery.toLowerCase()))
-        );
+        setToSuggestions([{ id: "error", name: "⚠️ API derzeit nicht erreichbar" }]);
       } finally {
         setIsSearchingTo(false);
       }
@@ -236,15 +212,16 @@ export const TransitModal: React.FC<TransitModalProps> = ({ isOpen, onClose }) =
                   {fromSuggestions.map((s) => (
                     <button
                       key={s.id}
+                      disabled={s.id === "error"}
                       onClick={() => {
+                        if (s.id === "error") return;
                         setFromStation(s);
                         setFromQuery(s.name);
                         setFromSuggestions([]);
                       }}
-                      className="w-full text-left px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition-colors border-b border-slate-700/50 last:border-0 flex items-center justify-between"
+                      className="w-full text-left px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition-colors border-b border-slate-700/50 last:border-0 flex items-center justify-between disabled:opacity-75 disabled:hover:bg-slate-800"
                     >
-                      <span>{s.name}</span>
-                      {s.id.startsWith("fallback") && <span className="text-[10px] text-slate-500 bg-slate-900 px-1.5 py-0.5 rounded">Offline-Vorschlag</span>}
+                      <span className={s.id === "error" ? "text-amber-400" : ""}>{s.name}</span>
                     </button>
                   ))}
                 </div>
@@ -274,15 +251,16 @@ export const TransitModal: React.FC<TransitModalProps> = ({ isOpen, onClose }) =
                   {toSuggestions.map((s) => (
                     <button
                       key={s.id}
+                      disabled={s.id === "error"}
                       onClick={() => {
+                        if (s.id === "error") return;
                         setToStation(s);
                         setToQuery(s.name);
                         setToSuggestions([]);
                       }}
-                      className="w-full text-left px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition-colors border-b border-slate-700/50 last:border-0 flex items-center justify-between"
+                      className="w-full text-left px-4 py-2.5 text-sm text-slate-300 hover:bg-slate-700 hover:text-white transition-colors border-b border-slate-700/50 last:border-0 flex items-center justify-between disabled:opacity-75 disabled:hover:bg-slate-800"
                     >
-                      <span>{s.name}</span>
-                      {s.id.startsWith("fallback") && <span className="text-[10px] text-slate-500 bg-slate-900 px-1.5 py-0.5 rounded">Offline-Vorschlag</span>}
+                      <span className={s.id === "error" ? "text-amber-400" : ""}>{s.name}</span>
                     </button>
                   ))}
                 </div>
