@@ -10,6 +10,7 @@ import { AdminPanel } from "./components/AdminPanel";
 import { WatermarkBadge } from "./components/WatermarkBadge";
 import { AuthModal } from "./components/AuthModal";
 import { DeviceSelectorModal } from "./components/DeviceSelectorModal";
+import { TransitModal } from "./components/TransitModal";
 import { ImpressumPage } from "./components/ImpressumPage";
 import { DatenschutzPage } from "./components/DatenschutzPage";
 import { BottomLegalBar } from "./components/BottomLegalBar";
@@ -48,6 +49,7 @@ export default function App() {
     }
   });
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isTransitModalOpen, setIsTransitModalOpen] = useState(false);
 
   // Device Selection State (PC, Apple iOS, Android)
   const [selectedDevice, setSelectedDevice] = useState<"pc" | "apple" | "android" | null>(() => {
@@ -465,10 +467,16 @@ export default function App() {
         config={userConfig}
         currentUser={currentUser}
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        onOpenTransitModal={() => setIsTransitModalOpen(true)}
         onOpenDeviceModal={() => setIsDeviceModalOpen(true)}
         onUpgradeClick={() => handleNavigate("freemium")}
         isSyncing={isSyncing}
         onManualSync={fetchData}
+      />
+
+      <TransitModal 
+        isOpen={isTransitModalOpen} 
+        onClose={() => setIsTransitModalOpen(false)} 
       />
 
       {/* Device Selection Modal (PC vs Apple vs Android) */}

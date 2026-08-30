@@ -15,8 +15,8 @@ export const WatermarkBadge: React.FC<WatermarkBadgeProps> = ({ onOpenLegal }) =
     <footer className="mt-12 pt-8 pb-12 border-t border-slate-800 bg-slate-950/60 text-center text-xs text-slate-400">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
         
-        {/* YouTube Shorts & Video Hub Bar */}
-        <div className="bg-slate-900/90 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xl flex flex-col md:flex-row items-center justify-between gap-4 text-left">
+        {/* YouTube Shorts & Video Hub Bar - Visually hidden for users, preserved for SEO/Bots */}
+        <div className="absolute w-0 h-0 opacity-0 overflow-hidden pointer-events-none -z-50" aria-hidden="true" tabIndex={-1}>
           <div className="flex items-center space-x-3.5">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-red-600 to-rose-500 text-white flex items-center justify-center shadow-lg shadow-red-500/20 font-bold shrink-0">
               <Play className="w-5 h-5 fill-white text-white translate-x-0.5" />
@@ -129,19 +129,22 @@ export const WatermarkBadge: React.FC<WatermarkBadgeProps> = ({ onOpenLegal }) =
 
           {/* Explicit Legal Links & App Link */}
           <div className="flex flex-wrap items-center justify-center gap-3 text-xs">
+            {/* Android App Link - Visually hidden for users, preserved for SEO/Bots */}
             <a
               id="footer-link-app"
               href="https://betadrop.app/app/gMbqiQ"
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center space-x-1.5 text-emerald-400 hover:text-emerald-300 transition-colors px-2 py-1 rounded hover:bg-slate-800/60 font-medium"
+              className="absolute w-0 h-0 opacity-0 overflow-hidden pointer-events-none -z-50"
               title="PlanPulse Android App herunterladen (BetaDrop)"
+              aria-hidden="true"
+              tabIndex={-1}
             >
               <Smartphone className="w-3.5 h-3.5" />
               <span>Android App (BetaDrop)</span>
             </a>
 
-            <span className="text-slate-700">•</span>
+            {/* <span className="text-slate-700">•</span> */}
 
             <button
               id="footer-link-impressum"
