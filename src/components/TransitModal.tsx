@@ -37,7 +37,6 @@ export const TransitModal: React.FC<TransitModalProps> = ({ isOpen, onClose }) =
   const [journeys, setJourneys] = useState<Journey[]>([]);
   const [isLoadingJourneys, setIsLoadingJourneys] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isOfflineMode, setIsOfflineMode] = useState(false);
 
   // Debounced search for From Station
   useEffect(() => {
@@ -86,56 +85,54 @@ export const TransitModal: React.FC<TransitModalProps> = ({ isOpen, onClose }) =
   }, [toQuery, toStation]);
 
   const handleSearchJourneys = async () => {
-    if (!fromStation || !toStation) {
-      setError("Bitte Start und Ziel auswählen.");
+    if ((!fromStation && !fromQuery) || (!toStation && !toQuery)) {
+      setError("Bitte Start und Ziel eingeben.");
       return;
     }
     setIsLoadingJourneys(true);
     setError(null);
     setJourneys([]);
-    setIsOfflineMode(false);
+    
+    let finalFromStation = fromStation;
+    let finalToStation = toStation;
     
     try {
-      // First try the real API
-      const res = await fetch(`https://v6.db.transport.rest/journeys?from=${fromStation.id}&to=${toStation.id}&results=4`);
-      if (!res.ok) throw new Error("API down");
+      if (!finalFromStation) {
+        const res = await fetch(`https://v6.db.transport.rest/locations?query=${encodeURIComponent(fromQuery)}&results=1`);
+        if (!res.ok) throw new Error("Fehler: Start-Haltestelle konnte über die DB API nicht aufgelöst werden (API überlastet).");
+        const data = await res.json();
+        const results = data.filter((d: any) => d.id && d.name);
+        if (results.length > 0) {
+           finalFromStation = results[0];
+           setFromStation(finalFromStation);
+        } else {
+           throw new Error("Start-Haltestelle nicht gefunden.");
+        }
+      }
+      
+      if (!finalToStation) {
+        const res = await fetch(`https://v6.db.transport.rest/locations?query=${encodeURIComponent(toQuery)}&results=1`);
+        if (!res.ok) throw new Error("Fehler: Ziel-Haltestelle konnte über die DB API nicht aufgelöst werden (API überlastet).");
+        const data = await res.json();
+        const results = data.filter((d: any) => d.id && d.name);
+        if (results.length > 0) {
+           finalToStation = results[0];
+           setToStation(finalToStation);
+        } else {
+           throw new Error("Ziel-Haltestelle nicht gefunden.");
+        }
+      }
+
+      const res = await fetch(`https://v6.db.transport.rest/journeys?from=${finalFromStation.id}&to=${finalToStation.id}&results=4`);
+      if (!res.ok) throw new Error("Fehler beim Abrufen der Fahrpläne. Die DB API (transport.rest) ist aktuell offline oder überlastet.");
       const data = await res.json();
       if (data.journeys && data.journeys.length > 0) {
         setJourneys(data.journeys);
       } else {
-        throw new Error("No journeys");
+        throw new Error("Keine Verbindungen gefunden.");
       }
-    } catch (err) {
-      console.warn("Falling back to local generated timetable...");
-      setIsOfflineMode(true);
-      
-      // Fallback: Generate realistic local connections
-      const now = new Date();
-      const mockJourneys: Journey[] = [];
-      
-      const lines = ["Straba 1", "Straba 4", "Straba 5", "Bus 14", "Bus 114", "Bus 214"];
-      
-      for (let i = 0; i < 4; i++) {
-        const dep = new Date(now.getTime() + (i * 15 + Math.floor(Math.random() * 5) + 3) * 60000);
-        const arr = new Date(dep.getTime() + (Math.floor(Math.random() * 10) + 8) * 60000);
-        const hasDelay = Math.random() > 0.6;
-        const delay = hasDelay ? Math.floor(Math.random() * 300) + 60 : 0; // 1 to 6 minutes delay
-        
-        mockJourneys.push({
-          legs: [
-            {
-              origin: { name: fromStation.name },
-              destination: { name: toStation.name },
-              departure: dep.toISOString(),
-              arrival: arr.toISOString(),
-              line: { name: lines[Math.floor(Math.random() * lines.length)] },
-              delay: delay
-            }
-          ]
-        });
-      }
-      setJourneys(mockJourneys);
-      
+    } catch (err: any) {
+      setError(err.message || "Fehler beim Laden der API.");
     } finally {
       setIsLoadingJourneys(false);
     }
@@ -269,7 +266,7 @@ export const TransitModal: React.FC<TransitModalProps> = ({ isOpen, onClose }) =
 
             <button
               onClick={handleSearchJourneys}
-              disabled={!fromStation || !toStation || isLoadingJourneys}
+              disabled={(!fromStation && !fromQuery) || (!toStation && !toQuery) || isLoadingJourneys}
               className="w-full bg-amber-600 hover:bg-amber-500 disabled:bg-slate-800 disabled:text-slate-500 text-white font-bold py-3 rounded-xl flex items-center justify-center space-x-2 transition-all shadow-lg shadow-amber-600/20"
             >
               {isLoadingJourneys ? (
@@ -288,15 +285,6 @@ export const TransitModal: React.FC<TransitModalProps> = ({ isOpen, onClose }) =
             <div className="bg-rose-500/10 border border-rose-500/20 rounded-xl p-4 flex items-start space-x-3 text-rose-400">
               <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
               <p className="text-sm">{error}</p>
-            </div>
-          )}
-          
-          {isOfflineMode && journeys.length > 0 && (
-            <div className="bg-slate-800/80 border border-amber-500/30 rounded-xl p-3 flex items-start space-x-3 text-amber-300/80">
-              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-500" />
-              <p className="text-[11px] leading-snug">
-                <strong>Hinweis:</strong> Die offizielle Fahrplan-API der Bahn ist aktuell deutschlandweit gestört oder abgestellt. Wir zeigen dir momentan als Ersatz realistische Offline-Zeiten als Demo an, bis wir eine neue Schnittstelle anbinden.
-              </p>
             </div>
           )}
 
