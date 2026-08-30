@@ -13,7 +13,11 @@ Sitemap: https://plan-pulse-five.vercel.app/sitemapurl
 
 # PlanPulse Official YouTube Channel & Shorts Videos
 # Channel: https://www.youtube.com/@PlanPulse-t5w/shorts
-# Short 1: https://www.youtube.com/shorts/2m0jz2Ol7zA
-# Short 2: https://www.youtube.com/shorts/93j80fc5hDs
-# Short 3: https://www.youtube.com/shorts/uGu4qeZTYKo
-# Short 4: https://www.youtube.com/shorts/z1NAiYe4DLY
+# Quick Guide: https://planpulse.mypi.co/video-quick-guide.html
+# Features: https://planpulse.mypi.co/video-features.html
+# Short 1: https://planpulse.mypi.co/video-short-1.html
+# Short 2: https://planpulse.mypi.co/video-short-2.html
+# Short 3: https://planpulse.mypi.co/video-short-3.html
+# Short 4: https://planpulse.mypi.co/video-short-4.html
+# Short 5: https://planpulse.mypi.co/video-short-5.html
+# Short 6: https://planpulse.mypi.co/video-short-6.html

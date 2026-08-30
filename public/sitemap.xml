@@ -14,7 +14,7 @@
 
   <url>
     <loc>https://planpulse.mypi.co/</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>always</changefreq>
     <priority>1.0</priority>
     <image:image>
@@ -122,7 +122,7 @@
   <!-- Dedizierte Video-Wiedergabeseiten -->
   <url>
     <loc>https://planpulse.mypi.co/video-quick-guide.html</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
     <image:image>
@@ -144,7 +144,7 @@
 
   <url>
     <loc>https://planpulse.mypi.co/video-features.html</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
     <image:image>
@@ -166,7 +166,7 @@
 
   <url>
     <loc>https://planpulse.mypi.co/video-short-1.html</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
     <image:image>
@@ -188,7 +188,7 @@
 
   <url>
     <loc>https://planpulse.mypi.co/video-short-2.html</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
     <image:image>
@@ -210,7 +210,7 @@
 
   <url>
     <loc>https://planpulse.mypi.co/video-short-3.html</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
     <image:image>
@@ -232,7 +232,7 @@
 
   <url>
     <loc>https://planpulse.mypi.co/video-short-4.html</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
     <image:image>
@@ -254,7 +254,7 @@
 
   <url>
     <loc>https://planpulse.mypi.co/video-short-5.html</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
     <image:image>
@@ -276,7 +276,7 @@
 
   <url>
     <loc>https://planpulse.mypi.co/video-short-6.html</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
     <image:image>
@@ -299,193 +299,193 @@
   <!-- App Sections & Unterseiten -->
   <url>
     <loc>https://planpulse.mypi.co/index.html</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/#timetable</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/#school-hub</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/#homework</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/#grades</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/#ai-assistant</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/#billing</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/#vertretungsplan</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/#stundenplan</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/#notenrechner</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/#klausuren</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/#ferien</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/#ki-scanner</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/#premium</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/#einstellungen</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/#profil</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/#features</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/#faq</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/#support</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/#contact</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/download/apk</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/betadrop</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/handyandroid.html</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/handyapple.html</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/handyadriod.html</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/handyappel.html</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/impressum.html</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/impressium.html</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/datenschutz.html</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/robust.txt</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/robots.txt</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://planpulse.mypi.co/manifest.json</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>
@@ -494,7 +494,7 @@
 
   <url>
     <loc>https://plan-pulse-five.vercel.app/</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>always</changefreq>
     <priority>1.0</priority>
     <image:image>
@@ -602,7 +602,7 @@
   <!-- Dedizierte Video-Wiedergabeseiten -->
   <url>
     <loc>https://plan-pulse-five.vercel.app/video-quick-guide.html</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
     <image:image>
@@ -624,7 +624,7 @@
 
   <url>
     <loc>https://plan-pulse-five.vercel.app/video-features.html</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
     <image:image>
@@ -646,7 +646,7 @@
 
   <url>
     <loc>https://plan-pulse-five.vercel.app/video-short-1.html</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
     <image:image>
@@ -668,7 +668,7 @@
 
   <url>
     <loc>https://plan-pulse-five.vercel.app/video-short-2.html</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
     <image:image>
@@ -690,7 +690,7 @@
 
   <url>
     <loc>https://plan-pulse-five.vercel.app/video-short-3.html</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
     <image:image>
@@ -712,7 +712,7 @@
 
   <url>
     <loc>https://plan-pulse-five.vercel.app/video-short-4.html</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
     <image:image>
@@ -734,7 +734,7 @@
 
   <url>
     <loc>https://plan-pulse-five.vercel.app/video-short-5.html</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
     <image:image>
@@ -756,7 +756,7 @@
 
   <url>
     <loc>https://plan-pulse-five.vercel.app/video-short-6.html</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
     <image:image>
@@ -779,193 +779,193 @@
   <!-- App Sections & Unterseiten -->
   <url>
     <loc>https://plan-pulse-five.vercel.app/index.html</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
     <loc>https://plan-pulse-five.vercel.app/#timetable</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://plan-pulse-five.vercel.app/#school-hub</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://plan-pulse-five.vercel.app/#homework</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://plan-pulse-five.vercel.app/#grades</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://plan-pulse-five.vercel.app/#ai-assistant</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://plan-pulse-five.vercel.app/#billing</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://plan-pulse-five.vercel.app/#vertretungsplan</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://plan-pulse-five.vercel.app/#stundenplan</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
     <loc>https://plan-pulse-five.vercel.app/#notenrechner</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://plan-pulse-five.vercel.app/#klausuren</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://plan-pulse-five.vercel.app/#ferien</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://plan-pulse-five.vercel.app/#ki-scanner</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://plan-pulse-five.vercel.app/#premium</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://plan-pulse-five.vercel.app/#einstellungen</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://plan-pulse-five.vercel.app/#profil</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
     <loc>https://plan-pulse-five.vercel.app/#features</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://plan-pulse-five.vercel.app/#faq</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://plan-pulse-five.vercel.app/#support</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://plan-pulse-five.vercel.app/#contact</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>https://plan-pulse-five.vercel.app/download/apk</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
     <loc>https://plan-pulse-five.vercel.app/betadrop</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.85</priority>
   </url>
   <url>
     <loc>https://plan-pulse-five.vercel.app/handyandroid.html</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://plan-pulse-five.vercel.app/handyapple.html</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://plan-pulse-five.vercel.app/handyadriod.html</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://plan-pulse-five.vercel.app/handyappel.html</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
     <loc>https://plan-pulse-five.vercel.app/impressum.html</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://plan-pulse-five.vercel.app/impressium.html</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://plan-pulse-five.vercel.app/datenschutz.html</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
     <loc>https://plan-pulse-five.vercel.app/robust.txt</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://plan-pulse-five.vercel.app/robots.txt</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
     <loc>https://plan-pulse-five.vercel.app/manifest.json</loc>
-    <lastmod>2026-08-27</lastmod>
+    <lastmod>2026-08-30</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.4</priority>
   </url>

@@ -92,7 +92,7 @@ for (const domain of domains) {
   xml += `\n  <!-- ==================== Domain: ${domain.split('//')[1]} ==================== -->\n\n`;
   
   // Root URL with all 8 video tags embedded + Image tag
-  xml += `  <url>\n    <loc>${domain}/</loc>\n    <lastmod>2026-08-27</lastmod>\n    <changefreq>always</changefreq>\n    <priority>1.0</priority>\n`;
+  xml += `  <url>\n    <loc>${domain}/</loc>\n    <lastmod>2026-08-30</lastmod>\n    <changefreq>always</changefreq>\n    <priority>1.0</priority>\n`;
   xml += `    <image:image>\n      <image:loc>${domain}/icon.png</image:loc>\n      <image:title>PlanPulse App Icon</image:title>\n    </image:image>\n`;
   for (const v of videos) {
     xml += buildVideoTag(v) + '\n';
@@ -102,7 +102,7 @@ for (const domain of domains) {
   // Dedicated video pages
   xml += `  <!-- Dedizierte Video-Wiedergabeseiten -->\n`;
   for (const v of videos) {
-    xml += `  <url>\n    <loc>${domain}/${v.file}</loc>\n    <lastmod>2026-08-27</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.85</priority>\n`;
+    xml += `  <url>\n    <loc>${domain}/${v.file}</loc>\n    <lastmod>2026-08-30</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>0.85</priority>\n`;
     xml += `    <image:image>\n      <image:loc>${domain}/icon.png</image:loc>\n    </image:image>\n`;
     xml += buildVideoTag(v) + '\n';
     xml += `  </url>\n\n`;
@@ -111,7 +111,7 @@ for (const domain of domains) {
   // Other static pages
   xml += `  <!-- App Sections & Unterseiten -->\n`;
   for (const p of staticPaths) {
-    xml += `  <url>\n    <loc>${domain}/${p.path}</loc>\n    <lastmod>2026-08-27</lastmod>\n    <changefreq>${p.freq}</changefreq>\n    <priority>${p.priority}</priority>\n  </url>\n`;
+    xml += `  <url>\n    <loc>${domain}/${p.path}</loc>\n    <lastmod>2026-08-30</lastmod>\n    <changefreq>${p.freq}</changefreq>\n    <priority>${p.priority}</priority>\n  </url>\n`;
   }
 }
 
