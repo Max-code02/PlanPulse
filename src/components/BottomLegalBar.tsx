@@ -49,18 +49,7 @@ export const BottomLegalBar: React.FC<BottomLegalBarProps> = ({ onNavigate, onOp
           <span className="font-medium text-[11px] sm:text-xs">Apple</span>
         </a>
 
-        <span className="text-slate-600 font-bold">•</span>
-
-        <a
-          id="btn-bottom-left-linktree"
-          href="https://linktr.ee/Planpulse"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center text-slate-500 hover:text-slate-400 transition-colors py-0.5 px-1 rounded hover:bg-slate-800 opacity-60 hover:opacity-100"
-          title="PlanPulse Links"
-        >
-          <span className="font-medium text-[9px]">Links</span>
-        </a>
+        
 
         <span className="text-slate-600 font-bold">•</span>
 
