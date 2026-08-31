@@ -47,9 +47,7 @@ export const TransitModal: React.FC<TransitModalProps> = ({ isOpen, onClose }) =
     const timer = setTimeout(async () => {
       setIsSearchingFrom(true);
       try {
-        const res = await fetch(`/api/transit/locations?query=${encodeURIComponent(fromQuery)}&results=5`, { credentials: "include" });
-        if (!res.ok) throw new Error("API-Verbindungsfehler");
-        const data = await res.json();
+        const data = await safeFetchJson(`/api/transit/locations?query=${encodeURIComponent(fromQuery)}&results=5`);
         const results = data.filter((d: any) => d.id && d.name).slice(0, 5);
         setFromSuggestions(results);
       } catch (err) {
@@ -70,9 +68,7 @@ export const TransitModal: React.FC<TransitModalProps> = ({ isOpen, onClose }) =
     const timer = setTimeout(async () => {
       setIsSearchingTo(true);
       try {
-        const res = await fetch(`/api/transit/locations?query=${encodeURIComponent(toQuery)}&results=5`, { credentials: "include" });
-        if (!res.ok) throw new Error("API-Verbindungsfehler");
-        const data = await res.json();
+        const data = await safeFetchJson(`/api/transit/locations?query=${encodeURIComponent(toQuery)}&results=5`);
         const results = data.filter((d: any) => d.id && d.name).slice(0, 5);
         setToSuggestions(results);
       } catch (err) {
@@ -83,6 +79,19 @@ export const TransitModal: React.FC<TransitModalProps> = ({ isOpen, onClose }) =
     }, 400);
     return () => clearTimeout(timer);
   }, [toQuery, toStation]);
+
+  
+  const safeFetchJson = async (url: string) => {
+    const res = await fetch(url, { credentials: "include" });
+    const contentType = res.headers.get("content-type") || "";
+    if (contentType.includes("text/html")) {
+      throw new Error("Netzwerk/WAF-Fehler. Bitte lade die Seite kurz neu.");
+    }
+    if (!res.ok) {
+      throw new Error("API-Verbindungsfehler oder überlastet.");
+    }
+    return res.json();
+  };
 
   const handleSearchJourneys = async () => {
     if ((!fromStation && !fromQuery) || (!toStation && !toQuery)) {
@@ -98,9 +107,7 @@ export const TransitModal: React.FC<TransitModalProps> = ({ isOpen, onClose }) =
     
     try {
       if (!finalFromStation) {
-        const res = await fetch(`/api/transit/locations?query=${encodeURIComponent(fromQuery)}&results=1`, { credentials: "include" });
-        if (!res.ok) throw new Error("Fehler: Start-Haltestelle konnte über die DB API nicht aufgelöst werden (API überlastet).");
-        const data = await res.json();
+        const data = await safeFetchJson(`/api/transit/locations?query=${encodeURIComponent(fromQuery)}&results=1`);
         const results = data.filter((d: any) => d.id && d.name);
         if (results.length > 0) {
            finalFromStation = results[0];
@@ -111,9 +118,7 @@ export const TransitModal: React.FC<TransitModalProps> = ({ isOpen, onClose }) =
       }
       
       if (!finalToStation) {
-        const res = await fetch(`/api/transit/locations?query=${encodeURIComponent(toQuery)}&results=1`, { credentials: "include" });
-        if (!res.ok) throw new Error("Fehler: Ziel-Haltestelle konnte über die DB API nicht aufgelöst werden (API überlastet).");
-        const data = await res.json();
+        const data = await safeFetchJson(`/api/transit/locations?query=${encodeURIComponent(toQuery)}&results=1`);
         const results = data.filter((d: any) => d.id && d.name);
         if (results.length > 0) {
            finalToStation = results[0];
@@ -123,9 +128,7 @@ export const TransitModal: React.FC<TransitModalProps> = ({ isOpen, onClose }) =
         }
       }
 
-      const res = await fetch(`/api/transit/journeys?from=${finalFromStation.id}&to=${finalToStation.id}&results=4`, { credentials: "include" });
-      if (!res.ok) throw new Error("Fehler beim Abrufen der Fahrpläne. Die DB API (transport.rest) ist aktuell offline oder überlastet.");
-      const data = await res.json();
+      const data = await safeFetchJson(`/api/transit/journeys?from=${finalFromStation.id}&to=${finalToStation.id}&results=4`);
       if (data.journeys && data.journeys.length > 0) {
         setJourneys(data.journeys);
       } else {
