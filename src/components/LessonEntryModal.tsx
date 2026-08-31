@@ -87,8 +87,11 @@ export const LessonEntryModal: React.FC<LessonEntryModalProps> = ({
   // Double lesson toggle
   const [isDoubleLesson, setIsDoubleLesson] = useState(false);
 
-  // Multi-day selection (for new entries, users can select multiple days or whole week)
-  const [selectedDays, setSelectedDays] = useState<DayOfWeek[]>([initialDay]);
+  // Multi-day & multi-period selection state
+  const [activeModalDay, setActiveModalDay] = useState<DayOfWeek>(initialDay);
+  const [selectedPeriodsByDay, setSelectedPeriodsByDay] = useState<Record<string, number[]>>({
+    [initialDay]: [initialPeriod]
+  });
 
   // Form State
   const [formData, setFormData] = useState<Partial<TimetableEntry>>({
@@ -113,7 +116,8 @@ export const LessonEntryModal: React.FC<LessonEntryModalProps> = ({
         ...editingItem,
         color: editingItem.color || "#2563eb",
       });
-      setSelectedDays([editingItem.day]);
+      setActiveModalDay(editingItem.day);
+      setSelectedPeriodsByDay({ [editingItem.day]: [editingItem.period] });
       setIsDoubleLesson(false);
     } else {
       const periodObj = PERIOD_TIMES.find((p) => p.period === initialPeriod);
@@ -131,32 +135,36 @@ export const LessonEntryModal: React.FC<LessonEntryModalProps> = ({
         substituteTeacher: "",
         substituteRoom: "",
       });
-      setSelectedDays([initialDay]);
+      setActiveModalDay(initialDay);
+      setSelectedPeriodsByDay({ [initialDay]: [initialPeriod] });
       setIsDoubleLesson(false);
     }
     setActiveTab("quick");
   }, [isOpen, editingItem, initialDay, initialPeriod, activeClass, allClasses]);
 
-  // Collect previous teachers and rooms for 1-tap chip autofill
+  // Collect previous teachers and rooms for 1-tap chip autofill (only real, non-empty user entries)
   const knownTeachers = useMemo(() => {
     const set = new Set<string>();
-    existingEntries.forEach((e) => { if (e.teacher?.trim()) set.add(e.teacher.trim()); });
-    availableSubjects.forEach((s) => { if (s.teacher?.trim()) set.add(s.teacher.trim()); });
-    return Array.from(set).slice(0, 6);
+    existingEntries.forEach((e) => { if (e.teacher && e.teacher.trim() && e.teacher !== "—") set.add(e.teacher.trim()); });
+    availableSubjects.forEach((s) => { if (s.teacher && s.teacher.trim() && s.teacher !== "—") set.add(s.teacher.trim()); });
+    return Array.from(set).slice(0, 8);
   }, [existingEntries, availableSubjects]);
 
   const knownRooms = useMemo(() => {
     const set = new Set<string>();
-    existingEntries.forEach((e) => { if (e.room?.trim()) set.add(e.room.trim()); });
-    availableSubjects.forEach((s) => { if (s.room?.trim()) set.add(s.room.trim()); });
-    return Array.from(set).slice(0, 6);
+    existingEntries.forEach((e) => { if (e.room && e.room.trim() && e.room !== "—") set.add(e.room.trim()); });
+    availableSubjects.forEach((s) => { if (s.room && s.room.trim() && s.room !== "—") set.add(s.room.trim()); });
+    return Array.from(set).slice(0, 8);
   }, [existingEntries, availableSubjects]);
+
+  // Standard handy school room numbers for instant 1-tap input
+  const quickRoomShortcuts = ["R101", "R102", "R201", "R202", "Bio-1", "Ch-1", "Ph-1", "Inf-1", "TH", "Aula"];
 
   if (!isOpen) return null;
 
   const handleSelectSubjectPreset = (presetName: string, presetColor: string) => {
-    const existing = availableSubjects.find((s) => s.name.toLowerCase() === presetName.toLowerCase()) ||
-      existingEntries.find((e) => e.subject.toLowerCase() === presetName.toLowerCase());
+    const existing = existingEntries.find((e) => e.subject.toLowerCase() === presetName.toLowerCase() && (e.teacher?.trim() || e.room?.trim())) ||
+      availableSubjects.find((s) => s.name.toLowerCase() === presetName.toLowerCase() && (s.teacher?.trim() || s.room?.trim()));
 
     setFormData((prev) => ({
       ...prev,
@@ -167,38 +175,51 @@ export const LessonEntryModal: React.FC<LessonEntryModalProps> = ({
     }));
   };
 
-  const handlePeriodChange = (periodNum: number) => {
-    const periodObj = PERIOD_TIMES.find((p) => p.period === periodNum);
-    setFormData((prev) => ({
-      ...prev,
-      period: periodNum,
-      time: periodObj ? periodObj.time : prev.time,
-    }));
+  const handleDayTabClick = (dayKey: DayOfWeek) => {
+    setActiveModalDay(dayKey);
+    if (editingItem) {
+      setSelectedPeriodsByDay({ [dayKey]: selectedPeriodsByDay[activeModalDay] || [] });
+      setFormData((prev) => ({ ...prev, day: dayKey }));
+    }
   };
 
-  const toggleDaySelection = (dayKey: DayOfWeek) => {
+  const togglePeriodSelection = (periodNum: number) => {
     if (editingItem) {
-      setSelectedDays([dayKey]);
-      setFormData((prev) => ({ ...prev, day: dayKey }));
+      setSelectedPeriodsByDay({ [activeModalDay]: [periodNum] });
+      const periodObj = PERIOD_TIMES.find((p) => p.period === periodNum);
+      setFormData((prev) => ({
+        ...prev,
+        period: periodNum,
+        time: periodObj ? periodObj.time : prev.time,
+      }));
       return;
     }
 
-    if (selectedDays.includes(dayKey)) {
-      if (selectedDays.length > 1) {
-        setSelectedDays(selectedDays.filter((d) => d !== dayKey));
+    setSelectedPeriodsByDay((prev) => {
+      const current = prev[activeModalDay] || [];
+      if (current.includes(periodNum)) {
+        return { ...prev, [activeModalDay]: current.filter((p) => p !== periodNum) };
+      } else {
+        return { ...prev, [activeModalDay]: [...current, periodNum].sort((a, b) => a - b) };
       }
-    } else {
-      setSelectedDays([...selectedDays, dayKey]);
-    }
+    });
+  };
+
+  const applyPeriodsToDays = (days: DayOfWeek[]) => {
+    const currentPeriods = selectedPeriodsByDay[activeModalDay] || [];
+    const periodsToCopy = currentPeriods.length > 0 ? currentPeriods : [1];
+    
+    setSelectedPeriodsByDay((prev) => {
+      const next = { ...prev };
+      days.forEach((d) => {
+        next[d] = [...periodsToCopy];
+      });
+      return next;
+    });
   };
 
   const selectAllWeekDays = () => {
-    setSelectedDays(["Mo", "Di", "Mi", "Do", "Fr"]);
-  };
-
-  const selectOnlyCurrentDay = (dayKey: DayOfWeek) => {
-    setSelectedDays([dayKey]);
-    setFormData((prev) => ({ ...prev, day: dayKey }));
+    applyPeriodsToDays(["Mo", "Di", "Mi", "Do", "Fr"]);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -209,19 +230,41 @@ export const LessonEntryModal: React.FC<LessonEntryModalProps> = ({
     }
 
     if (editingItem) {
-      onSave([{ ...formData, day: selectedDays[0] || formData.day || "Mo" }], isDoubleLesson);
+      const day = activeModalDay;
+      const period = selectedPeriodsByDay[day]?.[0] || formData.period || 1;
+      const timeObj = PERIOD_TIMES.find(p => p.period === period);
+      onSave([{ 
+        ...formData, 
+        day,
+        period,
+        time: timeObj?.time || formData.time
+      }], isDoubleLesson);
     } else {
-      // Build an entry payload for each selected day
-      const entriesToCreate: Partial<TimetableEntry>[] = selectedDays.map((d) => ({
-        ...formData,
-        day: d,
-      }));
+      const entriesToCreate: Partial<TimetableEntry>[] = [];
+      (Object.entries(selectedPeriodsByDay) as [string, number[]][]).forEach(([dayKey, periods]) => {
+        periods.forEach((period) => {
+          const timeObj = PERIOD_TIMES.find((p) => p.period === period);
+          entriesToCreate.push({
+            ...formData,
+            day: dayKey as DayOfWeek,
+            period: period,
+            time: timeObj?.time || "08:00 - 08:45"
+          });
+        });
+      });
+
+      if (entriesToCreate.length === 0) {
+        alert("Bitte wähle mindestens eine Stunde aus.");
+        return;
+      }
       onSave(entriesToCreate, isDoubleLesson);
     }
     onClose();
   };
 
-  const isAllWeekSelected = selectedDays.length === 5;
+  const totalEntriesCount = (Object.values(selectedPeriodsByDay) as number[][]).reduce((acc, arr) => acc + (arr?.length || 0), 0);
+  const activeDaysCount = (Object.values(selectedPeriodsByDay) as number[][]).filter((arr) => (arr?.length || 0) > 0).length;
+  const isAllWeekSelected = activeDaysCount === 5;
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/75 backdrop-blur-sm p-0 sm:p-4 overflow-y-auto animate-in fade-in duration-200">
@@ -244,24 +287,20 @@ export const LessonEntryModal: React.FC<LessonEntryModalProps> = ({
               className="w-8 h-8 rounded-xl flex items-center justify-center shadow-sm text-white font-bold text-xs"
               style={{ backgroundColor: formData.color || "#2563eb" }}
             >
-              {formData.period || 1}
+              {editingItem ? formData.period || 1 : (selectedPeriodsByDay[activeModalDay]?.[0] || 1)}
             </div>
             <div>
               <h3 className="text-base font-bold text-white tracking-tight">
                 {editingItem ? "Stunde bearbeiten" : "Neue Stunde(n) eintragen"}
               </h3>
               <p className="text-[11px] text-slate-400">
-                {selectedDays.length === 1 ? (
+                {editingItem ? (
                   <>
-                    {DAYS.find((d) => d.key === selectedDays[0])?.full || "Montag"} • {formData.period}. Stunde ({formData.time})
-                  </>
-                ) : selectedDays.length === 5 ? (
-                  <>
-                    <strong className="text-blue-400">Ganze Woche (Mo-Fr)</strong> • {formData.period}. Stunde ({formData.time})
+                    {DAYS.find((d) => d.key === activeModalDay)?.full || "Montag"} • {formData.period}. Stunde
                   </>
                 ) : (
                   <>
-                    {selectedDays.join(", ")} ({selectedDays.length} Tage) • {formData.period}. Stunde
+                    {totalEntriesCount} Stunde(n) an {activeDaysCount} Tag(en) ausgewählt
                   </>
                 )}
               </p>
@@ -403,33 +442,36 @@ export const LessonEntryModal: React.FC<LessonEntryModalProps> = ({
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center space-x-1.5">
                       <Calendar className="w-3.5 h-3.5 text-blue-400" />
-                      <span>{editingItem ? "Wochentag" : "Wochentag(e) auswählen"}</span>
+                      <span>{editingItem ? "Wochentag" : "Wochentag auswählen"}</span>
                     </label>
                     
                     {!editingItem && (
                       <span className="text-[11px] font-bold text-blue-400">
-                        {isAllWeekSelected ? "✓ Ganze Woche" : `${selectedDays.length} Tag(e)`}
+                        {isAllWeekSelected ? "✓ Ganze Woche aktiv" : `${activeDaysCount} Tag(e) aktiv`}
                       </span>
                     )}
                   </div>
 
-                  {/* Day Buttons with Multi-Select capability */}
+                  {/* Day Buttons with Tab capability */}
                   <div className="grid grid-cols-5 gap-1.5 bg-slate-950 p-1.5 rounded-2xl border border-slate-800">
                     {DAYS.map((d) => {
-                      const isSelected = selectedDays.includes(d.key);
+                      const isCurrentTab = activeModalDay === d.key;
+                      const hasSelections = !editingItem && (selectedPeriodsByDay[d.key] || []).length > 0;
                       return (
                         <button
                           key={d.key}
                           type="button"
-                          onClick={() => toggleDaySelection(d.key)}
+                          onClick={() => handleDayTabClick(d.key)}
                           className={`py-2 text-xs rounded-xl font-bold transition-all relative ${
-                            isSelected
+                            isCurrentTab
                               ? "bg-blue-600 text-white shadow-md scale-[1.02]"
+                              : hasSelections
+                              ? "bg-blue-900/40 text-blue-300 border border-blue-500/30"
                               : "text-slate-400 hover:text-slate-200 bg-slate-900/50"
                           }`}
                         >
-                          {isSelected && !editingItem && selectedDays.length > 1 && (
-                            <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-white shadow-sm" />
+                          {hasSelections && !isCurrentTab && (
+                            <span className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-blue-400 shadow-sm" />
                           )}
                           <div>{d.key}</div>
                           <div className="text-[9px] opacity-75 font-normal">{d.full.slice(0, 2)}</div>
@@ -451,39 +493,35 @@ export const LessonEntryModal: React.FC<LessonEntryModalProps> = ({
                         }`}
                       >
                         <CheckCheck className="w-3.5 h-3.5 text-blue-400" />
-                        <span>⚡ Ganze Woche (Mo-Fr)</span>
+                        <span>⚡ Auf ganze Woche kopieren</span>
                       </button>
 
                       <button
                         type="button"
-                        onClick={() => setSelectedDays(["Mo", "Mi", "Fr"])}
+                        onClick={() => applyPeriodsToDays(["Mo", "Mi", "Fr"])}
                         className="text-[11px] px-2 py-1 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800"
                       >
-                        Mo / Mi / Fr
+                        Auf Mo/Mi/Fr
                       </button>
 
                       <button
                         type="button"
-                        onClick={() => setSelectedDays(["Di", "Do"])}
+                        onClick={() => applyPeriodsToDays(["Di", "Do"])}
                         className="text-[11px] px-2 py-1 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800"
                       >
-                        Di / Do
+                        Auf Di/Do
                       </button>
 
                       <button
                         type="button"
-                        onClick={() => selectOnlyCurrentDay((initialDay as DayOfWeek) || "Mo")}
+                        onClick={() => {
+                          const currentPeriods = selectedPeriodsByDay[activeModalDay] || [];
+                          setSelectedPeriodsByDay({ [activeModalDay]: currentPeriods });
+                        }}
                         className="text-[11px] px-2 py-1 rounded-lg bg-slate-950 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800 ml-auto"
                       >
-                        Nur {initialDay}
+                        Nur diesen Tag
                       </button>
-                    </div>
-                  )}
-
-                  {/* Multi-day summary notice */}
-                  {!editingItem && selectedDays.length > 1 && (
-                    <div className="mt-2 p-2 rounded-xl bg-blue-950/40 border border-blue-800/50 flex items-center justify-between text-xs text-blue-300">
-                      <span>Wird für <strong>{selectedDays.length} Tage</strong> eingetragen: {selectedDays.join(", ")}</span>
                     </div>
                   )}
                 </div>
@@ -492,16 +530,16 @@ export const LessonEntryModal: React.FC<LessonEntryModalProps> = ({
                 <div>
                   <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block mb-1.5 flex items-center space-x-1.5">
                     <Clock className="w-3.5 h-3.5 text-blue-400" />
-                    <span>Stunde & Uhrzeit</span>
+                    <span>Stunden am {DAYS.find(d => d.key === activeModalDay)?.full}</span>
                   </label>
                   <div className="grid grid-cols-4 gap-1.5">
                     {PERIOD_TIMES.map((pt) => {
-                      const isSelected = formData.period === pt.period;
+                      const isSelected = (selectedPeriodsByDay[activeModalDay] || []).includes(pt.period);
                       return (
                         <button
                           key={pt.period}
                           type="button"
-                          onClick={() => handlePeriodChange(pt.period)}
+                          onClick={() => togglePeriodSelection(pt.period)}
                           className={`p-2 rounded-xl text-center border transition-all ${
                             isSelected
                               ? "bg-blue-600 border-blue-400 text-white shadow-md font-bold scale-[1.02]"
@@ -527,7 +565,7 @@ export const LessonEntryModal: React.FC<LessonEntryModalProps> = ({
                       <div className="text-xs">
                         <span className="font-bold text-white">Doppelstunde anlegen</span>
                         <span className="text-slate-400 text-[11px] block">
-                          Trägt automatisch auch die {(formData.period || 1) + 1}. Stunde ein
+                          Trägt für jede gewählte Stunde automatisch auch die Folgestunde ein
                         </span>
                       </div>
                     </label>
@@ -535,68 +573,111 @@ export const LessonEntryModal: React.FC<LessonEntryModalProps> = ({
                 </div>
               </div>
 
-              {/* 3. RAUM & LEHRKRAFT (Touch-Eingabe mit 1-Klick Vorschlägen) */}
+              {/* 3. RAUMNMUMMER & LEHRKRAFT (Eigene Eingabe + Schnelltipp-Vorschläge) */}
               <div className="space-y-3 pt-2 border-t border-slate-800">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   
-                  {/* Raum */}
-                  <div>
-                    <label className="text-xs font-bold text-slate-300 mb-1 block flex items-center space-x-1.5">
-                      <MapPin className="w-3.5 h-3.5 text-blue-400" />
-                      <span>Raum</span>
-                    </label>
+                  {/* Raumnummer / Raum */}
+                  <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-bold text-slate-200 flex items-center space-x-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-blue-400" />
+                        <span>Raum / Raumnummer</span>
+                      </label>
+                      {formData.room && (
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, room: "" })}
+                          className="text-[10px] text-slate-500 hover:text-slate-300 font-medium"
+                        >
+                          leeren
+                        </button>
+                      )}
+                    </div>
                     <input
                       type="text"
-                      placeholder="z.B. R102, Turnhalle, Bio"
+                      placeholder="z.B. 204, R102, Turnhalle, Bio-1"
                       value={formData.room || ""}
                       onChange={(e) => setFormData({ ...formData, room: e.target.value })}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white font-medium focus:border-blue-500 focus:outline-none"
+                      className="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-3 py-2 text-xs text-white font-medium focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder:text-slate-500"
                     />
-                    {knownRooms.length > 0 && (
-                      <div className="flex items-center gap-1 flex-wrap mt-1.5">
-                        <span className="text-[9px] text-slate-500 font-medium">Oft:</span>
-                        {knownRooms.map((r) => (
-                          <button
-                            key={r}
-                            type="button"
-                            onClick={() => setFormData({ ...formData, room: r })}
-                            className="text-[10px] px-1.5 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-300 hover:text-white hover:border-blue-500"
-                          >
-                            {r}
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                    
+                    {/* Quick room suggestion chips */}
+                    <div className="flex items-center gap-1 flex-wrap mt-2">
+                      <span className="text-[10px] text-slate-400 font-medium">Tipp:</span>
+                      {(knownRooms.length > 0 ? knownRooms : quickRoomShortcuts.slice(0, 5)).map((r) => (
+                        <button
+                          key={r}
+                          type="button"
+                          onClick={() => setFormData({ ...formData, room: r })}
+                          className={`text-[10px] px-2 py-0.5 rounded-md border font-medium transition-colors ${
+                            formData.room === r
+                              ? "bg-blue-600 border-blue-500 text-white font-bold"
+                              : "bg-slate-900/90 border-slate-800 text-slate-300 hover:text-white hover:border-slate-600"
+                          }`}
+                        >
+                          {r}
+                        </button>
+                      ))}
+                    </div>
                   </div>
 
-                  {/* Lehrkraft */}
-                  <div>
-                    <label className="text-xs font-bold text-slate-300 mb-1 block flex items-center space-x-1.5">
-                      <User className="w-3.5 h-3.5 text-blue-400" />
-                      <span>Lehrkraft</span>
-                    </label>
+                  {/* Lehrkraft / Lehrer */}
+                  <div className="bg-slate-950/60 p-2.5 rounded-xl border border-slate-800/80">
+                    <div className="flex items-center justify-between mb-1.5">
+                      <label className="text-xs font-bold text-slate-200 flex items-center space-x-1.5">
+                        <User className="w-3.5 h-3.5 text-blue-400" />
+                        <span>Lehrer / Lehrkraft</span>
+                      </label>
+                      {formData.teacher && (
+                        <button
+                          type="button"
+                          onClick={() => setFormData({ ...formData, teacher: "" })}
+                          className="text-[10px] text-slate-500 hover:text-slate-300 font-medium"
+                        >
+                          leeren
+                        </button>
+                      )}
+                    </div>
                     <input
                       type="text"
-                      placeholder="z.B. Hr. Becker, Schmidt"
+                      placeholder="z.B. Hr. Becker, Fr. Schmidt, Dr. Weber"
                       value={formData.teacher || ""}
                       onChange={(e) => setFormData({ ...formData, teacher: e.target.value })}
-                      className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white font-medium focus:border-blue-500 focus:outline-none"
+                      className="w-full bg-slate-900 border border-slate-700/80 rounded-lg px-3 py-2 text-xs text-white font-medium focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder:text-slate-500"
                     />
-                    {knownTeachers.length > 0 && (
-                      <div className="flex items-center gap-1 flex-wrap mt-1.5">
-                        <span className="text-[9px] text-slate-500 font-medium">Oft:</span>
-                        {knownTeachers.map((t) => (
+                    
+                    {/* Quick teacher suggestion chips & title helpers */}
+                    <div className="flex items-center gap-1 flex-wrap mt-2">
+                      <span className="text-[10px] text-slate-400 font-medium">Tipp:</span>
+                      {knownTeachers.length > 0 ? (
+                        knownTeachers.map((t) => (
                           <button
                             key={t}
                             type="button"
                             onClick={() => setFormData({ ...formData, teacher: t })}
-                            className="text-[10px] px-1.5 py-0.5 rounded bg-slate-950 border border-slate-800 text-slate-300 hover:text-white hover:border-blue-500"
+                            className={`text-[10px] px-2 py-0.5 rounded-md border font-medium transition-colors ${
+                              formData.teacher === t
+                                ? "bg-blue-600 border-blue-500 text-white font-bold"
+                                : "bg-slate-900/90 border-slate-800 text-slate-300 hover:text-white hover:border-slate-600"
+                            }`}
                           >
                             {t}
                           </button>
-                        ))}
-                      </div>
-                    )}
+                        ))
+                      ) : (
+                        ["Hr. ", "Fr. ", "Dr. "].map((prefix) => (
+                          <button
+                            key={prefix}
+                            type="button"
+                            onClick={() => setFormData((prev) => ({ ...prev, teacher: prefix }))}
+                            className="text-[10px] px-2 py-0.5 rounded-md bg-slate-900/90 border border-slate-800 text-slate-300 hover:text-white hover:border-slate-600"
+                          >
+                            +{prefix}
+                          </button>
+                        ))
+                      )}
+                    </div>
                   </div>
 
                 </div>
@@ -764,8 +845,8 @@ export const LessonEntryModal: React.FC<LessonEntryModalProps> = ({
             <span>
               {editingItem 
                 ? "Änderungen speichern" 
-                : selectedDays.length > 1
-                ? `${selectedDays.length} Tage eintragen`
+                : totalEntriesCount > 1
+                ? `${totalEntriesCount} Stunde(n) eintragen`
                 : isDoubleLesson 
                 ? "Doppelstunde speichern" 
                 : "Stunde eintragen"}

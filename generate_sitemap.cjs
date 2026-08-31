@@ -15,6 +15,22 @@ const staticPaths = [
   // Core files
   { path: 'index.html', priority: '1.0', freq: 'daily' },
   
+  // Dedicated High-Priority SEO Keyword Landing Pages
+  { path: 'stundenplan-online.html', priority: '1.0', freq: 'daily' },
+  { path: 'stundenplan-online', priority: '0.95', freq: 'daily' },
+  { path: 'digitaler-stundenplan.html', priority: '0.95', freq: 'daily' },
+  { path: 'digitaler-stundenplan', priority: '0.95', freq: 'daily' },
+  { path: 'stundenplan-fuer-schueler.html', priority: '0.95', freq: 'daily' },
+  { path: 'stundenplan-fuer-schueler', priority: '0.95', freq: 'daily' },
+  { path: 'notenrechner.html', priority: '0.95', freq: 'daily' },
+  { path: 'notenrechner', priority: '0.95', freq: 'daily' },
+  { path: 'hausaufgabenplaner.html', priority: '0.95', freq: 'daily' },
+  { path: 'hausaufgabenplaner', priority: '0.95', freq: 'daily' },
+  { path: 'vertretungsplan-online.html', priority: '0.95', freq: 'daily' },
+  { path: 'vertretungsplan-online', priority: '0.95', freq: 'daily' },
+  { path: 'schulplaner.html', priority: '0.9', freq: 'daily' },
+  { path: 'schulplaner', priority: '0.9', freq: 'daily' },
+
   // Existing hashes
   { path: '#timetable', priority: '0.9', freq: 'daily' },
   { path: '#school-hub', priority: '0.8', freq: 'daily' },

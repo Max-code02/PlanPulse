@@ -3144,6 +3144,29 @@ Sitemap: https://plan-pulse-five.vercel.app/sitemapurl
     res.sendFile(path.join(process.cwd(), "dist", "index.html"));
   });
 
+  // Dedicated SEO Keyword Landing Pages
+  const serveLandingPage = (fileNames: string[], fallbackHash: string) => (_req: express.Request, res: express.Response) => {
+    for (const fileName of fileNames) {
+      const candidates = [
+        path.join(process.cwd(), "public", fileName),
+        path.join(process.cwd(), fileName),
+        path.join(process.cwd(), "dist", fileName),
+      ];
+      for (const p of candidates) {
+        if (fs.existsSync(p)) return res.sendFile(p);
+      }
+    }
+    res.redirect(`/${fallbackHash}`);
+  };
+
+  app.get(["/stundenplan-online.html", "/stundenplan-online", "/stundenplan"], serveLandingPage(["stundenplan-online.html"], "#timetable"));
+  app.get(["/digitaler-stundenplan.html", "/digitaler-stundenplan"], serveLandingPage(["digitaler-stundenplan.html"], "#timetable"));
+  app.get(["/stundenplan-fuer-schueler.html", "/stundenplan-fuer-schueler"], serveLandingPage(["stundenplan-fuer-schueler.html"], "#timetable"));
+  app.get(["/notenrechner.html", "/notenrechner", "/notenrechner-oberstufe"], serveLandingPage(["notenrechner.html"], "#grades"));
+  app.get(["/hausaufgabenplaner.html", "/hausaufgabenplaner"], serveLandingPage(["hausaufgabenplaner.html"], "#homework"));
+  app.get(["/vertretungsplan-online.html", "/vertretungsplan-online", "/vertretungsplan"], serveLandingPage(["vertretungsplan-online.html"], "#vertretungsplan"));
+  app.get(["/schulplaner.html", "/schulplaner"], serveLandingPage(["schulplaner.html"], "#school-hub"));
+
   // Direct APK Download Redirect
   app.get(["/download/apk", "/apk", "/planpulse.apk", "/download"], (_req, res) => {
     res.redirect("https://upload.app/download/planpulse/de.planpulse.app/38bba70ca599e71d1d6dbd6537748b602a06792dfe26ce991b8e41118a5f565b");

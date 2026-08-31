@@ -2,25 +2,25 @@ import { auth, db } from "./firebase";
 import { collection, getDocs, setDoc, doc, deleteDoc, writeBatch } from "firebase/firestore";
 import { SchoolPlanTemplate, RegisteredSchool, TimetableEntry, HomeworkItem, GradeEntry, UserSubject, UserConfig } from "../types";
 
-// Default subjects fallback
+// Default subjects fallback (clean without hardcoded dummy teachers or rooms)
 export const DEFAULT_SUBJECTS: UserSubject[] = [
-  { id: "sub-1", name: "Mathematik", code: "M", color: "#2563eb", targetGrade: 2.0, oralRatio: 50, teacher: "Hr. Becker", room: "R101" },
-  { id: "sub-2", name: "Deutsch", code: "D", color: "#dc2626", targetGrade: 2.0, oralRatio: 50, teacher: "Fr. Sommer", room: "R102" },
-  { id: "sub-3", name: "Englisch", code: "E", color: "#7c3aed", targetGrade: 2.0, oralRatio: 50, teacher: "Hr. Miller", room: "R201" },
-  { id: "sub-4", name: "Physik", code: "Ph", color: "#0891b2", targetGrade: 2.0, oralRatio: 50, teacher: "Hr. Weber", room: "Ph-1" },
-  { id: "sub-5", name: "Biologie", code: "Bio", color: "#16a34a", targetGrade: 2.0, oralRatio: 50, teacher: "Fr. Lindner", room: "Bio-1" },
-  { id: "sub-6", name: "Chemie", code: "Ch", color: "#059669", targetGrade: 2.0, oralRatio: 50, teacher: "Hr. Vogel", room: "Ch-1" },
-  { id: "sub-7", name: "Geschichte", code: "G", color: "#d97706", targetGrade: 2.0, oralRatio: 50, teacher: "Hr. Franke", room: "R105" },
-  { id: "sub-8", name: "Informatik", code: "Inf", color: "#6366f1", targetGrade: 2.0, oralRatio: 50, teacher: "Hr. Kistner", room: "Inf-1" },
-  { id: "sub-9", name: "Sport", code: "Sp", color: "#ea580c", targetGrade: 1.5, oralRatio: 50, teacher: "Hr. Walter", room: "TH-1" },
-  { id: "sub-10", name: "Kunst", code: "Ku", color: "#ec4899", targetGrade: 2.0, oralRatio: 50, teacher: "Fr. Meier", room: "K-1" },
-  { id: "sub-11", name: "Musik", code: "Mu", color: "#8b5cf6", targetGrade: 2.0, oralRatio: 50, teacher: "Hr. Bach", room: "M-1" },
-  { id: "sub-12", name: "Religion", code: "Rel", color: "#0284c7", targetGrade: 2.0, oralRatio: 50, teacher: "Fr. Engel", room: "R103" },
-  { id: "sub-13", name: "Geographie", code: "Geo", color: "#ca8a04", targetGrade: 2.0, oralRatio: 50, teacher: "Hr. Braun", room: "R204" },
-  { id: "sub-14", name: "Französisch", code: "F", color: "#3b82f6", targetGrade: 2.0, oralRatio: 50, teacher: "Mme. Dupont", room: "R205" },
-  { id: "sub-15", name: "Latein", code: "L", color: "#9333ea", targetGrade: 2.0, oralRatio: 50, teacher: "Hr. Caesar", room: "R206" },
-  { id: "sub-16", name: "Spanisch", code: "Spa", color: "#e11d48", targetGrade: 2.0, oralRatio: 50, teacher: "Sra. Garcia", room: "R207" },
-  { id: "sub-17", name: "Wirtschaft & Recht", code: "WR", color: "#0d9488", targetGrade: 2.0, oralRatio: 50, teacher: "Hr. Richter", room: "R208" },
+  { id: "sub-1", name: "Mathematik", code: "M", color: "#2563eb", targetGrade: 2.0, oralRatio: 50, teacher: "", room: "" },
+  { id: "sub-2", name: "Deutsch", code: "D", color: "#dc2626", targetGrade: 2.0, oralRatio: 50, teacher: "", room: "" },
+  { id: "sub-3", name: "Englisch", code: "E", color: "#7c3aed", targetGrade: 2.0, oralRatio: 50, teacher: "", room: "" },
+  { id: "sub-4", name: "Physik", code: "Ph", color: "#0891b2", targetGrade: 2.0, oralRatio: 50, teacher: "", room: "" },
+  { id: "sub-5", name: "Biologie", code: "Bio", color: "#16a34a", targetGrade: 2.0, oralRatio: 50, teacher: "", room: "" },
+  { id: "sub-6", name: "Chemie", code: "Ch", color: "#059669", targetGrade: 2.0, oralRatio: 50, teacher: "", room: "" },
+  { id: "sub-7", name: "Geschichte", code: "G", color: "#d97706", targetGrade: 2.0, oralRatio: 50, teacher: "", room: "" },
+  { id: "sub-8", name: "Informatik", code: "Inf", color: "#6366f1", targetGrade: 2.0, oralRatio: 50, teacher: "", room: "" },
+  { id: "sub-9", name: "Sport", code: "Sp", color: "#ea580c", targetGrade: 1.5, oralRatio: 50, teacher: "", room: "" },
+  { id: "sub-10", name: "Kunst", code: "Ku", color: "#ec4899", targetGrade: 2.0, oralRatio: 50, teacher: "", room: "" },
+  { id: "sub-11", name: "Musik", code: "Mu", color: "#8b5cf6", targetGrade: 2.0, oralRatio: 50, teacher: "", room: "" },
+  { id: "sub-12", name: "Religion", code: "Rel", color: "#0284c7", targetGrade: 2.0, oralRatio: 50, teacher: "", room: "" },
+  { id: "sub-13", name: "Geographie", code: "Geo", color: "#ca8a04", targetGrade: 2.0, oralRatio: 50, teacher: "", room: "" },
+  { id: "sub-14", name: "Französisch", code: "F", color: "#3b82f6", targetGrade: 2.0, oralRatio: 50, teacher: "", room: "" },
+  { id: "sub-15", name: "Latein", code: "L", color: "#9333ea", targetGrade: 2.0, oralRatio: 50, teacher: "", room: "" },
+  { id: "sub-16", name: "Spanisch", code: "Spa", color: "#e11d48", targetGrade: 2.0, oralRatio: 50, teacher: "", room: "" },
+  { id: "sub-17", name: "Wirtschaft & Recht", code: "WR", color: "#0d9488", targetGrade: 2.0, oralRatio: 50, teacher: "", room: "" },
 ];
 
 export const INITIAL_SCHOOLS: RegisteredSchool[] = [
