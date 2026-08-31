@@ -1749,6 +1749,50 @@ async function startServer() {
     }
   });
 
+  // Transit API Proxy (to avoid CORS / Failed to fetch on client side)
+  app.get("/api/transit/locations", async (req, res) => {
+    try {
+      const query = req.query.query;
+      const results = req.query.results || 5;
+      if (!query) return res.status(400).json({ error: "Query is required" });
+      
+      const targetUrl = `https://v6.db.transport.rest/locations?query=${encodeURIComponent(query)}&results=${results}`;
+      const response = await fetch(targetUrl, {
+        headers: { 'User-Agent': 'PlanPulse App' }
+      });
+      if (!response.ok) {
+         throw new Error("DB API returned status: " + response.status);
+      }
+      const data = await response.json();
+      res.json(data);
+    } catch (err: any) {
+      console.error("Transit locations error:", err.message);
+      res.status(503).json({ error: "Fehler beim Abrufen der DB-Schnittstelle" });
+    }
+  });
+
+  app.get("/api/transit/journeys", async (req, res) => {
+    try {
+      const from = req.query.from;
+      const to = req.query.to;
+      const results = req.query.results || 4;
+      if (!from || !to) return res.status(400).json({ error: "From and To are required" });
+      
+      const targetUrl = `https://v6.db.transport.rest/journeys?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}&results=${results}`;
+      const response = await fetch(targetUrl, {
+        headers: { 'User-Agent': 'PlanPulse App' }
+      });
+      if (!response.ok) {
+         throw new Error("DB API returned status: " + response.status);
+      }
+      const data = await response.json();
+      res.json(data);
+    } catch (err: any) {
+      console.error("Transit journeys error:", err.message);
+      res.status(503).json({ error: "Fehler beim Abrufen der Fahrpläne" });
+    }
+  });
+
   // Health check
   app.get("/api/health", (_req, res) => {
     res.json({ status: "ok", timestamp: new Date().toISOString(), userCount: db.users.length });

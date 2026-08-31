@@ -47,7 +47,7 @@ export const TransitModal: React.FC<TransitModalProps> = ({ isOpen, onClose }) =
     const timer = setTimeout(async () => {
       setIsSearchingFrom(true);
       try {
-        const res = await fetch(`https://v6.db.transport.rest/locations?query=${encodeURIComponent(fromQuery)}&results=5`);
+        const res = await fetch(`/api/transit/locations?query=${encodeURIComponent(fromQuery)}&results=5`);
         if (!res.ok) throw new Error("API-Verbindungsfehler");
         const data = await res.json();
         const results = data.filter((d: any) => d.id && d.name).slice(0, 5);
@@ -70,7 +70,7 @@ export const TransitModal: React.FC<TransitModalProps> = ({ isOpen, onClose }) =
     const timer = setTimeout(async () => {
       setIsSearchingTo(true);
       try {
-        const res = await fetch(`https://v6.db.transport.rest/locations?query=${encodeURIComponent(toQuery)}&results=5`);
+        const res = await fetch(`/api/transit/locations?query=${encodeURIComponent(toQuery)}&results=5`);
         if (!res.ok) throw new Error("API-Verbindungsfehler");
         const data = await res.json();
         const results = data.filter((d: any) => d.id && d.name).slice(0, 5);
@@ -98,7 +98,7 @@ export const TransitModal: React.FC<TransitModalProps> = ({ isOpen, onClose }) =
     
     try {
       if (!finalFromStation) {
-        const res = await fetch(`https://v6.db.transport.rest/locations?query=${encodeURIComponent(fromQuery)}&results=1`);
+        const res = await fetch(`/api/transit/locations?query=${encodeURIComponent(fromQuery)}&results=1`);
         if (!res.ok) throw new Error("Fehler: Start-Haltestelle konnte über die DB API nicht aufgelöst werden (API überlastet).");
         const data = await res.json();
         const results = data.filter((d: any) => d.id && d.name);
@@ -111,7 +111,7 @@ export const TransitModal: React.FC<TransitModalProps> = ({ isOpen, onClose }) =
       }
       
       if (!finalToStation) {
-        const res = await fetch(`https://v6.db.transport.rest/locations?query=${encodeURIComponent(toQuery)}&results=1`);
+        const res = await fetch(`/api/transit/locations?query=${encodeURIComponent(toQuery)}&results=1`);
         if (!res.ok) throw new Error("Fehler: Ziel-Haltestelle konnte über die DB API nicht aufgelöst werden (API überlastet).");
         const data = await res.json();
         const results = data.filter((d: any) => d.id && d.name);
@@ -123,7 +123,7 @@ export const TransitModal: React.FC<TransitModalProps> = ({ isOpen, onClose }) =
         }
       }
 
-      const res = await fetch(`https://v6.db.transport.rest/journeys?from=${finalFromStation.id}&to=${finalToStation.id}&results=4`);
+      const res = await fetch(`/api/transit/journeys?from=${finalFromStation.id}&to=${finalToStation.id}&results=4`);
       if (!res.ok) throw new Error("Fehler beim Abrufen der Fahrpläne. Die DB API (transport.rest) ist aktuell offline oder überlastet.");
       const data = await res.json();
       if (data.journeys && data.journeys.length > 0) {
