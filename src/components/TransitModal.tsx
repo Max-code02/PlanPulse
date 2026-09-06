@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Bus, Train, ArrowRight, MapPin, Clock, Search, X, Loader2, AlertCircle } from "lucide-react";
+import { safeFetchJson } from "../lib/api";
 
 interface TransitModalProps {
   isOpen: boolean;
@@ -47,9 +48,13 @@ export const TransitModal: React.FC<TransitModalProps> = ({ isOpen, onClose }) =
     const timer = setTimeout(async () => {
       setIsSearchingFrom(true);
       try {
-        const data = await safeFetchJson(`/api/transit/locations?query=${encodeURIComponent(fromQuery)}&results=5`);
-        const results = data.filter((d: any) => d.id && d.name).slice(0, 5);
-        setFromSuggestions(results);
+        const res = await safeFetchJson(`/api/transit/locations?query=${encodeURIComponent(fromQuery)}&results=5`);
+        if (res.ok && Array.isArray(res.data)) {
+          const results = res.data.filter((d: any) => d.id && d.name).slice(0, 5);
+          setFromSuggestions(results);
+        } else {
+          setFromSuggestions([]);
+        }
       } catch (err) {
         setFromSuggestions([{ id: "error", name: "⚠️ API derzeit nicht erreichbar" }]);
       } finally {
@@ -68,9 +73,13 @@ export const TransitModal: React.FC<TransitModalProps> = ({ isOpen, onClose }) =
     const timer = setTimeout(async () => {
       setIsSearchingTo(true);
       try {
-        const data = await safeFetchJson(`/api/transit/locations?query=${encodeURIComponent(toQuery)}&results=5`);
-        const results = data.filter((d: any) => d.id && d.name).slice(0, 5);
-        setToSuggestions(results);
+        const res = await safeFetchJson(`/api/transit/locations?query=${encodeURIComponent(toQuery)}&results=5`);
+        if (res.ok && Array.isArray(res.data)) {
+          const results = res.data.filter((d: any) => d.id && d.name).slice(0, 5);
+          setToSuggestions(results);
+        } else {
+          setToSuggestions([]);
+        }
       } catch (err) {
         setToSuggestions([{ id: "error", name: "⚠️ API derzeit nicht erreichbar" }]);
       } finally {
@@ -79,19 +88,6 @@ export const TransitModal: React.FC<TransitModalProps> = ({ isOpen, onClose }) =
     }, 400);
     return () => clearTimeout(timer);
   }, [toQuery, toStation]);
-
-  
-  const safeFetchJson = async (url: string) => {
-    const res = await fetch(url, { credentials: "include" });
-    const contentType = res.headers.get("content-type") || "";
-    if (contentType.includes("text/html")) {
-      throw new Error("Netzwerk/WAF-Fehler. Bitte lade die Seite kurz neu.");
-    }
-    if (!res.ok) {
-      throw new Error("API-Verbindungsfehler oder überlastet.");
-    }
-    return res.json();
-  };
 
   const handleSearchJourneys = async () => {
     if ((!fromStation && !fromQuery) || (!toStation && !toQuery)) {
@@ -107,8 +103,8 @@ export const TransitModal: React.FC<TransitModalProps> = ({ isOpen, onClose }) =
     
     try {
       if (!finalFromStation) {
-        const data = await safeFetchJson(`/api/transit/locations?query=${encodeURIComponent(fromQuery)}&results=1`);
-        const results = data.filter((d: any) => d.id && d.name);
+        const res = await safeFetchJson(`/api/transit/locations?query=${encodeURIComponent(fromQuery)}&results=1`);
+        const results = (res.ok && Array.isArray(res.data) ? res.data : []).filter((d: any) => d.id && d.name);
         if (results.length > 0) {
            finalFromStation = results[0];
            setFromStation(finalFromStation);
@@ -118,8 +114,8 @@ export const TransitModal: React.FC<TransitModalProps> = ({ isOpen, onClose }) =
       }
       
       if (!finalToStation) {
-        const data = await safeFetchJson(`/api/transit/locations?query=${encodeURIComponent(toQuery)}&results=1`);
-        const results = data.filter((d: any) => d.id && d.name);
+        const res = await safeFetchJson(`/api/transit/locations?query=${encodeURIComponent(toQuery)}&results=1`);
+        const results = (res.ok && Array.isArray(res.data) ? res.data : []).filter((d: any) => d.id && d.name);
         if (results.length > 0) {
            finalToStation = results[0];
            setToStation(finalToStation);
@@ -128,9 +124,9 @@ export const TransitModal: React.FC<TransitModalProps> = ({ isOpen, onClose }) =
         }
       }
 
-      const data = await safeFetchJson(`/api/transit/journeys?from=${finalFromStation.id}&to=${finalToStation.id}&results=4`);
-      if (data.journeys && data.journeys.length > 0) {
-        setJourneys(data.journeys);
+      const res = await safeFetchJson(`/api/transit/journeys?from=${finalFromStation.id}&to=${finalToStation.id}&results=4`);
+      if (res.ok && res.data?.journeys && res.data.journeys.length > 0) {
+        setJourneys(res.data.journeys);
       } else {
         throw new Error("Keine Verbindungen gefunden.");
       }

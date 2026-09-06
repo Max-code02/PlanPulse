@@ -402,10 +402,58 @@ export default function App() {
 
   const handleAdoptSchoolTemplate = async (templateId: string, mode: "replace" | "merge") => {
     try {
-      // Mock logic to replace missing backend logic. Real logic would apply predefined templates.
-      showToast(`🎉 Stunden erfolgreich in deinen Plan übernommen & gespeichert (Mock)!`);
+      const data = await safeFetchJson(`/api/schools`);
+      const schools = data.schools || [];
+      let templateToAdopt = null;
+      for (const s of schools) {
+        if (s.plans) {
+          const plan = s.plans.find((p: any) => p.id === templateId);
+          if (plan) {
+            templateToAdopt = plan;
+            break;
+          }
+        }
+      }
+
+      if (!templateToAdopt) {
+         showToast("Fehler: Vorlage nicht gefunden.");
+         return;
+      }
+
+      // Ensure every entry gets a new unique ID so it doesn't conflict
+      const newEntries = (templateToAdopt.entries || []).map((e: any) => ({
+        ...e,
+        id: `tt-adopted-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`
+      }));
+      
+      let finalEntries: TimetableEntry[] = [];
+      if (mode === "replace") {
+        finalEntries = [...newEntries];
+      } else {
+        finalEntries = [...timetableEntries, ...newEntries];
+      }
+
+      setTimetableEntries(finalEntries);
+      
+      if (auth.currentUser) {
+        try {
+          const batch = writeBatch(db);
+          if (mode === "replace") {
+             const snap = await getDocs(collection(db, `users/${auth.currentUser.uid}/timetable`));
+             snap.docs.forEach(d => batch.delete(d.ref));
+          }
+          finalEntries.forEach(entry => {
+             const docRef = doc(db, `users/${auth.currentUser.uid}/timetable`, entry.id);
+             batch.set(docRef, entry);
+          });
+          await batch.commit();
+        } catch(e) { console.warn("Firebase Sync Error", e); }
+      }
+
+      showToast(`🎉 Stunden erfolgreich in deinen Plan übernommen!`);
     } catch (err) {
       console.error("Adopt template error:", err);
+      showToast("Fehler bei der Planübernahme.");
     }
   };
 

@@ -175,7 +175,7 @@ export const GradeCalculator: React.FC<GradeCalculatorProps> = ({ entries, onDat
 
   // Merge timetable subject names into subject list if missing
   useEffect(() => {
-    if (entries.length > 0 && subjects.length > 0) {
+    if (entries.length > 0) {
       const timetableSubjectNames = Array.from(
         new Set(entries.map((e) => e.subject).filter((s): s is string => typeof s === "string" && s.trim().length > 0))
       );

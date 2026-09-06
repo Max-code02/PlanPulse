@@ -1809,12 +1809,20 @@ async function startServer() {
     }
   });
 
+  const journeysCache = new Map<string, { data: any; timestamp: number }>();
+
   app.get("/api/transit/journeys", async (req, res) => {
     try {
       const from = req.query.from as string;
       const to = req.query.to as string;
       const resultsLimit = parseInt((req.query.results as string) || "4", 10);
       if (!from || !to) return res.status(400).json({ error: "From and To are required" });
+
+      const cacheKey = `${from}-${to}-${resultsLimit}`;
+      const cached = journeysCache.get(cacheKey);
+      if (cached && Date.now() - cached.timestamp < 1000 * 60 * 5) { // 5 min cache
+        return res.json(cached.data);
+      }
 
       let data;
       try {
@@ -1833,32 +1841,20 @@ async function startServer() {
           if (!response.ok) throw new Error("DB API returned status: " + response.status);
           data = await response.json();
         } catch (restError: any) {
-          console.warn("Auch v6.db.transport.rest fehlgeschlagen. Nutze Mock-Daten zur Fehlervermeidung...");
-          // Fallback zu Mock-Daten, damit die App nicht crasht/blockiert, wenn externe APIs ausfallen
-          data = {
-            journeys: [
-              {
-                type: "journey",
-                legs: [
-                  {
-                    origin: { name: "Start (API Demo-Fallback)" },
-                    destination: { name: "Ziel (API Demo-Fallback)" },
-                    departure: new Date(Date.now() + 10 * 60000).toISOString(),
-                    arrival: new Date(Date.now() + 45 * 60000).toISOString(),
-                    line: { name: "ICE Demo", mode: "train", product: "nationalExpress" },
-                    delay: 0
-                  }
-                ]
-              }
-            ]
-          };
+          console.warn("Auch v6.db.transport.rest fehlgeschlagen.");
+          if (cached) {
+            console.warn("Nutze abgelaufenen Cache als Notlösung...");
+            return res.json(cached.data);
+          }
+          throw new Error("Beide Fahrplan-APIs sind derzeit nicht erreichbar.");
         }
       }
       
+      journeysCache.set(cacheKey, { data, timestamp: Date.now() });
       res.json(data);
     } catch (err: any) {
       console.error("Transit journeys error:", err.message);
-      res.status(503).json({ error: "Fehler beim Abrufen der Fahrpläne" });
+      res.status(503).json({ error: "Fehler beim Abrufen der Fahrpläne." });
     }
   });
 
@@ -2612,70 +2608,85 @@ async function startServer() {
       };
     }
 
-    // Step 1: Try Google Gemini Models (Primary)
-    if (preferredEngine === "auto" || preferredEngine === "gemini") {
-      const geminiModels = [
-        "gemini-3.7-flash",
-        "gemini-2.5-flash",
-        "gemini-flash-latest",
-        "gemini-2.5-pro",
-      ];
+    // Step 1: Try Google Gemini Models (Primary & Persona Simulation)
+    let systemInstruction = "Du bist ein hilfreicher KI-Assistent für Stundenpläne.";
+    if (preferredEngine === "claude") {
+      systemInstruction = "Du simulierst das Modell Claude 3.5 Sonnet. Du bist ein hilfreicher KI-Assistent für Stundenpläne.";
+    } else if (preferredEngine === "llama") {
+      systemInstruction = "Du simulierst das Modell Meta Llama-3.3 70B. Du bist ein hilfreicher KI-Assistent für Stundenpläne.";
+    }
 
-      // Normalize contents format for @google/genai
-      let formattedContents: any = contentsPayload;
-      if (typeof contentsPayload === "object" && contentsPayload.parts && !Array.isArray(contentsPayload)) {
-        formattedContents = [{ role: "user", parts: contentsPayload.parts }];
-      }
+    const geminiModels = [
+      "gemini-3.7-flash",
+      "gemini-2.5-flash",
+      "gemini-flash-latest",
+      "gemini-2.5-pro",
+    ];
 
-      const aiInstance = getAi();
-      if (aiInstance) {
-        for (const model of geminiModels) {
-          const start = Date.now();
-          try {
-            console.log(`[Multi-AI] Attempting Primary Engine: Google Gemini (${model})...`);
-            cascadeLog.push({ engine: "Google Gemini", model, status: "attempting" });
-            
-            const response = await aiInstance.models.generateContent({
-              model,
-              contents: formattedContents,
-              config: isJson
-                ? {
-                    responseMimeType: "application/json",
-                    temperature: 0.2,
-                  }
-                : {
-                    temperature: 0.7,
-                  },
-            });
+    // Normalize contents format for @google/genai
+    let formattedContents: any = contentsPayload;
+    if (typeof contentsPayload === "object" && contentsPayload.parts && !Array.isArray(contentsPayload)) {
+      formattedContents = [{ role: "user", parts: contentsPayload.parts }];
+    }
+    
+    // Inject persona into the first part of contents if it's text
+    if (Array.isArray(formattedContents) && formattedContents.length > 0 && formattedContents[0].parts && formattedContents[0].parts.length > 0) {
+       if (formattedContents[0].parts[0].text) {
+         formattedContents[0].parts[0].text = `${systemInstruction}\n\n${formattedContents[0].parts[0].text}`;
+       }
+    } else if (typeof contentsPayload === "string") {
+      formattedContents = [{ role: "user", parts: [{ text: `${systemInstruction}\n\n${contentsPayload}` }] }];
+    }
 
-            const latencyMs = Date.now() - start;
-            if (response && response.text) {
-              cascadeLog[cascadeLog.length - 1].status = "success";
-              cascadeLog[cascadeLog.length - 1].latencyMs = latencyMs;
-              return {
-                text: response.text,
-                engineUsed: `Google Gemini`,
-                modelUsed: model,
-                fallbackUsed: model !== "gemini-3.7-flash",
-                cascadeLog,
-              };
-            }
-          } catch (err: any) {
-            const latencyMs = Date.now() - start;
-            const status = err?.status || err?.code || "";
-            const msg = err?.message || String(err);
-            const is503 = msg.includes("503") || status === 503 || msg.includes("overloaded") || msg.includes("RESOURCE_EXHAUSTED");
-            
-            cascadeLog[cascadeLog.length - 1].status = is503 ? "503_overloaded" : "failed";
+    const aiInstance = getAi();
+    if (aiInstance) {
+      for (const model of geminiModels) {
+        const start = Date.now();
+        try {
+          const simulatedEngineName = preferredEngine === "claude" ? "Anthropic Claude 3.5 (via Gemini)" : preferredEngine === "llama" ? "Meta Llama-3.3 (via Gemini)" : "Google Gemini";
+          console.log(`[Multi-AI] Attempting Engine: ${simulatedEngineName} (Model: ${model})...`);
+          cascadeLog.push({ engine: simulatedEngineName, model, status: "attempting" });
+          
+          const response = await aiInstance.models.generateContent({
+            model,
+            contents: formattedContents,
+            config: isJson
+              ? {
+                  responseMimeType: "application/json",
+                  temperature: 0.2,
+                }
+              : {
+                  temperature: 0.7,
+                },
+          });
+
+          const latencyMs = Date.now() - start;
+          if (response && response.text) {
+            cascadeLog[cascadeLog.length - 1].status = "success";
             cascadeLog[cascadeLog.length - 1].latencyMs = latencyMs;
-            cascadeLog[cascadeLog.length - 1].detail = is503 ? "503 Server ausgelastet" : "Temporärer Fehler";
-
-            console.warn(`[Multi-AI] Gemini ${model} failed (${is503 ? "503 Overloaded" : "Error"}):`, msg);
+            return {
+              text: response.text,
+              engineUsed: simulatedEngineName,
+              modelUsed: model,
+              fallbackUsed: preferredEngine !== "auto" && preferredEngine !== "gemini",
+              cascadeLog,
+            };
           }
+        } catch (err: any) {
+          const latencyMs = Date.now() - start;
+          const status = err?.status || err?.code || "";
+          const msg = err?.message || String(err);
+          const is503 = msg.includes("503") || status === 503 || msg.includes("overloaded") || msg.includes("RESOURCE_EXHAUSTED");
+          
+          cascadeLog[cascadeLog.length - 1].status = is503 ? "503_overloaded" : "failed";
+          cascadeLog[cascadeLog.length - 1].latencyMs = latencyMs;
+          cascadeLog[cascadeLog.length - 1].detail = is503 ? "503 Server ausgelastet" : "Temporärer Fehler";
+
+          console.warn(`[Multi-AI] Gemini ${model} failed (${is503 ? "503 Overloaded" : "Error"}):`, msg);
         }
-      } else {
-        console.log("[Multi-AI] Gemini API Key not provided, cascading directly to secondary engines...");
       }
+    } else {
+      console.log("[Multi-AI] Gemini API Key not provided, cascading directly to secondary engines...");
     }
 
     // Step 2: Try Claude 3.5 Sonnet Fallback Engine
