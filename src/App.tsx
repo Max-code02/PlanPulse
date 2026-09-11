@@ -20,7 +20,8 @@ import {
   SubstitutionNotice,
   UserConfig, 
   ActiveTab,
-  AuthUser
+  AuthUser,
+  UserSubject
 } from "./types";
 import { safeFetchJson } from "./lib/api";
 import { db, auth } from "./lib/firebase";
@@ -245,9 +246,8 @@ export default function App() {
           if (auth.currentUser) {
             const { getDoc, getDocs, collection, doc } = await import("firebase/firestore");
             const snap = await getDocs(collection(db, `users/${auth.currentUser.uid}/timetable`));
-            if (!snap.empty) {
-              fbTimetable = snap.docs.map(d => d.data() as TimetableEntry);
-            }
+            fbTimetable = snap.docs.map(d => d.data() as TimetableEntry);
+            
             const cfgSnap = await getDoc(doc(db, `users/${auth.currentUser.uid}/config/main`));
             if (cfgSnap.exists()) {
               fbConfig = cfgSnap.data() as UserConfig;
@@ -259,7 +259,7 @@ export default function App() {
       }
       // ----------------------------
 
-      if (fbTimetable) {
+      if (fbTimetable !== null) {
         setTimetableEntries(fbTimetable);
       }
       
@@ -273,11 +273,106 @@ export default function App() {
     }
   }, [currentUser?.id]);
 
+  // Real-time multi-device synchronization via Firestore listeners
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    const uid = currentUser.id;
+
+    let unsubTimetable = () => {};
+    let unsubSubjects = () => {};
+    let unsubConfig = () => {};
+    let unsubGrades = () => {};
+    let unsubHomework = () => {};
+
+    const setupRealtimeListeners = async () => {
+      try {
+        const { collection, doc, onSnapshot } = await import("firebase/firestore");
+
+        // 1. Live Timetable listener
+        unsubTimetable = onSnapshot(
+          collection(db, `users/${uid}/timetable`),
+          (snap) => {
+            const entries = snap.docs.map((d) => d.data() as TimetableEntry);
+            setTimetableEntries(entries);
+            localStorage.setItem("planpulse_timetable_entries", JSON.stringify(entries));
+          },
+          (err) => {
+            console.warn("Real-time timetable listener error:", err);
+          }
+        );
+
+        // 2. Live Subjects listener (syncs Fächer verwalten across devices)
+        unsubSubjects = onSnapshot(
+          collection(db, `users/${uid}/subjects`),
+          (snap) => {
+            const subjects = snap.docs.map((d) => d.data() as UserSubject);
+            localStorage.setItem("planpulse_user_subjects", JSON.stringify(subjects));
+            window.dispatchEvent(new CustomEvent("planpulse_data_updated", { detail: { subjects } }));
+          },
+          (err) => {
+            console.warn("Real-time subjects listener error:", err);
+          }
+        );
+
+        // 3. Live Grades listener (syncs Noten across devices)
+        unsubGrades = onSnapshot(
+          collection(db, `users/${uid}/grades`),
+          (snap) => {
+            const grades = snap.docs.map((d) => d.data());
+            localStorage.setItem("planpulse_grade_entries", JSON.stringify(grades));
+            window.dispatchEvent(new CustomEvent("planpulse_data_updated", { detail: { grades } }));
+          },
+          (err) => {
+            console.warn("Real-time grades listener error:", err);
+          }
+        );
+
+        // 4. Live Homework listener (syncs Hausaufgaben across devices)
+        unsubHomework = onSnapshot(
+          collection(db, `users/${uid}/homework`),
+          (snap) => {
+            const items = snap.docs.map((d) => d.data());
+            localStorage.setItem("planpulse_homework_items", JSON.stringify(items));
+            window.dispatchEvent(new CustomEvent("planpulse_data_updated", { detail: { homework: items } }));
+          },
+          (err) => {
+            console.warn("Real-time homework listener error:", err);
+          }
+        );
+
+        // 5. Live Config listener
+        unsubConfig = onSnapshot(
+          doc(db, `users/${uid}/config/main`),
+          (snap) => {
+            if (snap.exists()) {
+              setUserConfig(snap.data() as UserConfig);
+            }
+          },
+          (err) => {
+            console.warn("Real-time config listener error:", err);
+          }
+        );
+      } catch (e) {
+        console.warn("Failed to attach Firestore real-time listeners:", e);
+      }
+    };
+
+    setupRealtimeListeners();
+
+    return () => {
+      unsubTimetable();
+      unsubSubjects();
+      unsubGrades();
+      unsubHomework();
+      unsubConfig();
+    };
+  }, [currentUser?.id]);
+
   useEffect(() => {
     fetchData();
 
-    // Auto-sync interval based on plan
-    const intervalMs = userConfig.planType === "premium" ? 8000 : 900000;
+    // Background sync heartbeat
+    const intervalMs = userConfig.planType === "premium" ? 10000 : 900000;
     const timer = setInterval(() => {
       fetchData();
     }, intervalMs);
@@ -364,44 +459,64 @@ export default function App() {
 
   const handleClearTimetable = async (targetClass: string) => {
     try {
-      // Optimistic & Firebase
-      if (targetClass && targetClass !== "alle") {
+      const tClass = (targetClass || "").trim().toLowerCase();
+      if (tClass && tClass !== "alle") {
         setTimetableEntries((prev) =>
-          prev.filter((e) => e.targetClass.toLowerCase() !== targetClass.toLowerCase())
+          prev.filter((e) => (e.targetClass || "").toLowerCase() !== tClass)
         );
         showToast(`Stundenplan für Klasse ${targetClass} geleert.`);
         
         if (auth.currentUser) {
           try {
+            const { getDocs, collection, writeBatch } = await import("firebase/firestore");
             const snap = await getDocs(collection(db, `users/${auth.currentUser.uid}/timetable`));
             const batch = writeBatch(db);
-            snap.docs.forEach(d => {
-              if (d.data().targetClass.toLowerCase() === targetClass.toLowerCase()) {
+            snap.docs.forEach((d) => {
+              if ((d.data().targetClass || "").toLowerCase() === tClass) {
                 batch.delete(d.ref);
               }
             });
             await batch.commit();
-          } catch(e) { console.warn(e); }
+          } catch (e) {
+            console.warn("Firebase clear timetable class error:", e);
+          }
+        }
+
+        try {
+          const headers = getAuthHeaders();
+          await safeFetchJson("/api/timetable/clear", {
+            method: "POST",
+            headers,
+            body: JSON.stringify({ targetClass }),
+          });
+        } catch (e) {
+          console.warn("Backend clear timetable class error:", e);
         }
       } else {
         setTimetableEntries([]);
-        showToast("Gesamter Stundenplan und Fächer geleert. Bereit für einen Neustart.");
-        
-        // Also reset subjects
-        try {
-          const headers = getAuthHeaders();
-          await safeFetchJson("/api/subjects/reset", { method: "POST", headers });
-        } catch (e) {
-          console.warn("Failed to reset subjects", e);
-        }
+        showToast("Gesamter Stundenplan geleert. Bereit für einen Neustart.");
 
         if (auth.currentUser) {
           try {
+            const { getDocs, collection, writeBatch } = await import("firebase/firestore");
             const snap = await getDocs(collection(db, `users/${auth.currentUser.uid}/timetable`));
             const batch = writeBatch(db);
-            snap.docs.forEach(d => batch.delete(d.ref));
+            snap.docs.forEach((d) => batch.delete(d.ref));
             await batch.commit();
-          } catch(e) { console.warn(e); }
+          } catch (e) {
+            console.warn("Firebase clear all timetable error:", e);
+          }
+        }
+
+        try {
+          const headers = getAuthHeaders();
+          await safeFetchJson("/api/timetable/clear", {
+            method: "POST",
+            headers,
+            body: JSON.stringify({ targetClass: "alle" }),
+          });
+        } catch (e) {
+          console.warn("Backend clear all timetable error:", e);
         }
       }
     } catch (err) {
@@ -481,12 +596,30 @@ export default function App() {
           const { writeBatch, doc } = await import("firebase/firestore");
           const batch = writeBatch(db);
           newEntries.forEach((entry: any) => {
-            const docRef = doc(db, `users/${auth.currentUser.uid}/timetable`, entry.id);
+            const docRef = doc(db, `users/${auth.currentUser!.uid}/timetable`, entry.id);
             batch.set(docRef, entry);
           });
           await batch.commit();
         } catch (e) {
           console.warn("Firebase sync error for AI parsed plan", e);
+        }
+      }
+    }
+
+    if (parsedData?.allSubjects && Array.isArray(parsedData.allSubjects) && parsedData.allSubjects.length > 0) {
+      localStorage.removeItem("planpulse_subjects_explicitly_cleared");
+      localStorage.setItem("planpulse_user_subjects", JSON.stringify(parsedData.allSubjects));
+      if (auth.currentUser) {
+        try {
+          const { writeBatch, doc } = await import("firebase/firestore");
+          const batch = writeBatch(db);
+          parsedData.allSubjects.forEach((sub: any) => {
+            const docRef = doc(db, `users/${auth.currentUser!.uid}/subjects`, sub.id);
+            batch.set(docRef, sub, { merge: true });
+          });
+          await batch.commit();
+        } catch (e) {
+          console.warn("Firebase sync error for AI parsed subjects", e);
         }
       }
     }

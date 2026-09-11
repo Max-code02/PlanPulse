@@ -31,6 +31,8 @@ import {
 } from "lucide-react";
 import { GradeEntry, GradeType, TimetableEntry, UserSubject, SubjectGradeSummary } from "../types";
 import { safeFetchJson } from "../lib/api";
+import { auth, db } from "../lib/firebase";
+import { collection, doc, getDocs, setDoc, deleteDoc, writeBatch } from "firebase/firestore";
 
 interface GradeCalculatorProps {
   entries: TimetableEntry[];
@@ -91,6 +93,9 @@ export const GradeCalculator: React.FC<GradeCalculatorProps> = ({ entries, onDat
   const [selectedSubjectFilter, setSelectedSubjectFilter] = useState<string>("ALL");
   const [searchSubject, setSearchSubject] = useState("");
   const [hoveredSegment, setHoveredSegment] = useState<string | null>(null);
+  const userExplicitlyClearedSubjectsRef = React.useRef(
+    typeof window !== "undefined" && localStorage.getItem("planpulse_subjects_explicitly_cleared") === "true"
+  );
 
   // Grade Form State
   const [gradeForm, setGradeForm] = useState({
@@ -171,7 +176,13 @@ export const GradeCalculator: React.FC<GradeCalculatorProps> = ({ entries, onDat
 
   useEffect(() => {
     fetchData();
-    const handleUpdate = () => {
+    const handleUpdate = (e: any) => {
+      if (e?.detail?.subjects !== undefined && Array.isArray(e.detail.subjects)) {
+        setSubjects(e.detail.subjects);
+      }
+      if (e?.detail?.grades !== undefined && Array.isArray(e.detail.grades)) {
+        setGrades(e.detail.grades);
+      }
       fetchData();
     };
     window.addEventListener("planpulse_data_updated", handleUpdate);
@@ -179,41 +190,6 @@ export const GradeCalculator: React.FC<GradeCalculatorProps> = ({ entries, onDat
       window.removeEventListener("planpulse_data_updated", handleUpdate);
     };
   }, [fetchData]);
-
-  // Merge timetable subject names into subject list if missing
-  useEffect(() => {
-    if (entries.length > 0) {
-      const timetableSubjectNames = Array.from(
-        new Set(entries.map((e) => e.subject).filter((s): s is string => typeof s === "string" && s.trim().length > 0))
-      );
-      const existingNames = new Set(subjects.map((s) => s.name.toLowerCase()));
-      
-      const newFromTimetable: UserSubject[] = [];
-      timetableSubjectNames.forEach((tName: string) => {
-        if (!existingNames.has(tName.toLowerCase())) {
-          newFromTimetable.push({
-            id: `sub-tt-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-            name: tName,
-            code: tName.substring(0, 3).toUpperCase(),
-            color: COLOR_PALETTE[Math.floor(Math.random() * COLOR_PALETTE.length)],
-            targetGrade: 2.0,
-            oralRatio: 50,
-          });
-        }
-      });
-
-      if (newFromTimetable.length > 0) {
-        const updated = [...subjects, ...newFromTimetable];
-        setSubjects(updated);
-        // Save to backend
-        safeFetchJson("/api/subjects", {
-          method: "POST",
-          headers: getHeaders(),
-          body: JSON.stringify({ subjects: updated }),
-        }).catch((e) => console.error("Auto-sync timetable subjects error:", e));
-      }
-    }
-  }, [entries, subjects, getHeaders]);
 
   // Subject Summaries computation
   const subjectSummaries: SubjectGradeSummary[] = useMemo(() => {
@@ -403,6 +379,7 @@ export const GradeCalculator: React.FC<GradeCalculatorProps> = ({ entries, onDat
 
     try {
       const headers = getHeaders();
+      let savedGrade: GradeEntry | null = null;
       if (editingGrade) {
         const res = await safeFetchJson(`/api/grades/${editingGrade.id}`, {
           method: "PUT",
@@ -410,7 +387,8 @@ export const GradeCalculator: React.FC<GradeCalculatorProps> = ({ entries, onDat
           body: JSON.stringify(payload),
         }).then((r) => r.data);
 
-        if (res.success && res.grade) {
+        if (res?.success && res.grade) {
+          savedGrade = res.grade;
           setGrades((prev) => prev.map((g) => (g.id === editingGrade.id ? res.grade : g)));
         }
       } else {
@@ -420,11 +398,23 @@ export const GradeCalculator: React.FC<GradeCalculatorProps> = ({ entries, onDat
           body: JSON.stringify(payload),
         }).then((r) => r.data);
 
-        if (res.success && res.grade) {
+        if (res?.success && res.grade) {
+          savedGrade = res.grade;
           setGrades([res.grade, ...grades]);
         }
       }
+
+      if (savedGrade && auth.currentUser) {
+        try {
+          await setDoc(doc(db, `users/${auth.currentUser.uid}/grades`, savedGrade.id), savedGrade, { merge: true });
+        } catch (e) {
+          console.warn("Firestore save grade error:", e);
+        }
+      }
+
       setGradeModalOpen(false);
+      if (onDataChange) onDataChange();
+      window.dispatchEvent(new CustomEvent("planpulse_data_updated", { detail: { grades: savedGrade ? [savedGrade] : [] } }));
     } catch (err) {
       console.error("Save grade error:", err);
     }
@@ -434,6 +424,15 @@ export const GradeCalculator: React.FC<GradeCalculatorProps> = ({ entries, onDat
     setGrades((prev) => prev.filter((g) => g.id !== id));
     try {
       await safeFetchJson(`/api/grades/${id}`, { method: "DELETE", headers: getHeaders() });
+      if (auth.currentUser) {
+        try {
+          await deleteDoc(doc(db, `users/${auth.currentUser.uid}/grades`, id));
+        } catch (e) {
+          console.warn("Firestore delete grade error:", e);
+        }
+      }
+      if (onDataChange) onDataChange();
+      window.dispatchEvent(new CustomEvent("planpulse_data_updated", { detail: { deletedGradeId: id } }));
     } catch (err) {
       console.error("Delete grade error:", err);
     }
@@ -487,7 +486,12 @@ export const GradeCalculator: React.FC<GradeCalculatorProps> = ({ entries, onDat
     };
 
     try {
+      userExplicitlyClearedSubjectsRef.current = false;
+      localStorage.removeItem("planpulse_subjects_explicitly_cleared");
       const headers = getHeaders();
+      let updatedSubjects: UserSubject[] = [];
+      let savedSub: UserSubject = payload;
+
       if (editingSubject) {
         const res = await safeFetchJson(`/api/subjects/${editingSubject.id}`, {
           method: "PUT",
@@ -495,8 +499,11 @@ export const GradeCalculator: React.FC<GradeCalculatorProps> = ({ entries, onDat
           body: JSON.stringify(payload),
         }).then((r) => r.data);
 
-        if (res.success && res.subjects) {
+        if (res?.success && res.subjects) {
+          updatedSubjects = res.subjects;
+          if (res.subject) savedSub = res.subject;
           setSubjects(res.subjects);
+          localStorage.setItem("planpulse_user_subjects", JSON.stringify(res.subjects));
         }
       } else {
         const res = await safeFetchJson("/api/subjects", {
@@ -505,12 +512,26 @@ export const GradeCalculator: React.FC<GradeCalculatorProps> = ({ entries, onDat
           body: JSON.stringify(payload),
         }).then((r) => r.data);
 
-        if (res.success && res.subjects) {
+        if (res?.success && res.subjects) {
+          updatedSubjects = res.subjects;
+          if (res.subject) savedSub = res.subject;
           setSubjects(res.subjects);
+          localStorage.setItem("planpulse_user_subjects", JSON.stringify(res.subjects));
         }
       }
+
+      // Sync subject directly to Firestore for immediate multi-device propagation
+      if (auth.currentUser) {
+        try {
+          await setDoc(doc(db, `users/${auth.currentUser.uid}/subjects`, savedSub.id), savedSub, { merge: true });
+        } catch (e) {
+          console.warn("Firestore save subject error:", e);
+        }
+      }
+
       setSubjectModalOpen(false);
       if (onDataChange) onDataChange();
+      window.dispatchEvent(new CustomEvent("planpulse_data_updated", { detail: { subjects: updatedSubjects } }));
     } catch (err) {
       console.error("Save subject error:", err);
     } finally {
@@ -528,12 +549,27 @@ export const GradeCalculator: React.FC<GradeCalculatorProps> = ({ entries, onDat
         headers,
       }).then((r) => r.data);
 
-      if (res.success && res.subjects) {
+      let nextSubjects: UserSubject[] = [];
+      if (res?.success && res.subjects) {
+        nextSubjects = res.subjects;
         setSubjects(res.subjects);
+        localStorage.setItem("planpulse_user_subjects", JSON.stringify(res.subjects));
       } else {
-        setSubjects((prev) => prev.filter((s) => s.id !== id));
+        nextSubjects = subjects.filter((s) => s.id !== id);
+        setSubjects(nextSubjects);
+        localStorage.setItem("planpulse_user_subjects", JSON.stringify(nextSubjects));
       }
+
+      if (auth.currentUser) {
+        try {
+          await deleteDoc(doc(db, `users/${auth.currentUser.uid}/subjects`, id));
+        } catch (e) {
+          console.warn("Firestore delete subject error:", e);
+        }
+      }
+
       if (onDataChange) onDataChange();
+      window.dispatchEvent(new CustomEvent("planpulse_data_updated", { detail: { subjects: nextSubjects } }));
     } catch (err) {
       console.error("Delete subject error:", err);
     }
@@ -541,15 +577,32 @@ export const GradeCalculator: React.FC<GradeCalculatorProps> = ({ entries, onDat
 
   const handleResetDefaultSubjects = async () => {
     if (!confirm("Fächer auf die Standard-Fächerliste zurücksetzen?")) return;
+    userExplicitlyClearedSubjectsRef.current = false;
+    localStorage.removeItem("planpulse_subjects_explicitly_cleared");
     try {
-      const res = await safeFetchJson("/api/subjects/reset", {
+      const res = await safeFetchJson<{ success: boolean; subjects: UserSubject[] }>("/api/subjects/reset", {
         method: "POST",
         headers: getHeaders(),
       }).then((r) => r.data);
 
-      if (res.success && res.subjects) {
+      if (res?.success && res.subjects) {
         setSubjects(res.subjects);
+        localStorage.setItem("planpulse_user_subjects", JSON.stringify(res.subjects));
+        if (auth.currentUser) {
+          try {
+            const snap = await getDocs(collection(db, `users/${auth.currentUser.uid}/subjects`));
+            const batch = writeBatch(db);
+            snap.docs.forEach((d) => batch.delete(d.ref));
+            res.subjects.forEach((sub) => {
+              batch.set(doc(db, `users/${auth.currentUser!.uid}/subjects`, sub.id), sub);
+            });
+            await batch.commit();
+          } catch (e) {
+            console.warn("Firestore reset subjects sync error:", e);
+          }
+        }
         if (onDataChange) onDataChange();
+        window.dispatchEvent(new CustomEvent("planpulse_data_updated", { detail: { subjects: res.subjects } }));
       }
     } catch (err) {
       console.error("Reset subjects error:", err);
@@ -558,15 +611,34 @@ export const GradeCalculator: React.FC<GradeCalculatorProps> = ({ entries, onDat
 
   const handleDeleteAllSubjects = async () => {
     if (!confirm("Alle Fächer restlos löschen? (Kann nicht rückgängig gemacht werden)")) return;
+    userExplicitlyClearedSubjectsRef.current = true;
+    localStorage.setItem("planpulse_subjects_explicitly_cleared", "true");
     try {
-      const res = await safeFetchJson("/api/subjects/clear", {
+      setSubjects([]);
+      localStorage.setItem("planpulse_user_subjects", "[]");
+
+      const res = await safeFetchJson<{ success: boolean; subjects: UserSubject[] }>("/api/subjects/clear", {
         method: "POST",
         headers: getHeaders(),
       }).then((r) => r.data);
-      if (res.success && res.subjects !== undefined) {
+
+      if (res?.success && res.subjects !== undefined) {
         setSubjects(res.subjects);
-        if (onDataChange) onDataChange();
       }
+
+      if (auth.currentUser) {
+        try {
+          const snap = await getDocs(collection(db, `users/${auth.currentUser.uid}/subjects`));
+          const batch = writeBatch(db);
+          snap.docs.forEach((d) => batch.delete(d.ref));
+          await batch.commit();
+        } catch (e) {
+          console.warn("Firestore clear subjects error:", e);
+        }
+      }
+
+      if (onDataChange) onDataChange();
+      window.dispatchEvent(new CustomEvent("planpulse_data_updated", { detail: { subjects: [] } }));
     } catch (err) {
       console.error("Clear subjects error:", err);
     }

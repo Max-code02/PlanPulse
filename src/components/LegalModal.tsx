@@ -567,11 +567,25 @@ export const LegalModal: React.FC<LegalModalProps> = ({
                 </p>
               </section>
 
-              {/* 6. Ihre Rechte nach der DSGVO */}
+              {/* 6. Spamschutz & Sicherheit (Google reCAPTCHA Enterprise) */}
               <section className="space-y-2 border-t border-slate-800/80 pt-4">
                 <h4 className="text-white font-semibold text-sm flex items-center space-x-2">
                   <ShieldCheck className="w-4 h-4 text-emerald-400" />
-                  <span>6. Ihre Rechte als betroffene Person</span>
+                  <span>6. Spamschutz &amp; Missbrauchserkennung (Google reCAPTCHA Enterprise)</span>
+                </h4>
+                <p className="text-xs sm:text-sm text-slate-300">
+                  Wir setzen auf dieser Website <strong>Google reCAPTCHA Enterprise</strong> ein (Anbieter: Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland). Der Dienst dient dazu festzustellen, ob Interaktionen auf der Plattform (insbesondere Login-, Registrierungs- und Formularaktionen) durch einen menschlichen Nutzer oder missbräuchlich durch automatisierte Schadsoftware bzw. Bots erfolgen.
+                </p>
+                <p className="text-xs text-slate-400">
+                  Hierbei erfasst reCAPTCHA Enterprise Hard- und Softwaredaten (z.&nbsp;B. IP-Adresse, Geräte- und Browserinformationen, Interaktionsmuster) und leitet diese an Google zur Risikoanalyse weiter. Rechtsgrundlage ist Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse am Schutz unserer Plattform vor Cyberangriffen, Brute-Force-Attacken und Spam). Weitere Informationen finden Sie in der <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">Datenschutzerklärung</a> und den <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer" className="text-blue-400 underline">Nutzungsbedingungen</a> von Google.
+                </p>
+              </section>
+
+              {/* 7. Ihre Rechte nach der DSGVO */}
+              <section className="space-y-2 border-t border-slate-800/80 pt-4">
+                <h4 className="text-white font-semibold text-sm flex items-center space-x-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-400" />
+                  <span>7. Ihre Rechte als betroffene Person</span>
                 </h4>
                 <p className="text-xs sm:text-sm text-slate-300">
                   Sie haben im Rahmen der geltenden gesetzlichen Bestimmungen jederzeit folgende Rechte:

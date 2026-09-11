@@ -476,7 +476,7 @@ export async function safeFetchJson<T = any>(
           const targetClass = bodyObj?.targetClass;
           let entries = getLocalItem<TimetableEntry[]>("planpulse_timetable_entries", []);
           if (targetClass && targetClass !== "alle") {
-            entries = entries.filter((e) => e.targetClass.toLowerCase() !== targetClass.toLowerCase());
+            entries = entries.filter((e) => (e.targetClass || "").toLowerCase() !== targetClass.toLowerCase());
           } else {
             entries = [];
           }
@@ -659,6 +659,19 @@ export async function safeFetchJson<T = any>(
       // 5. SUBJECTS (/api/subjects)
       // ----------------------------------------------------
       if (resource === "subjects") {
+        if (id === "clear" || (method === "POST" && pathname.endsWith("/clear"))) {
+          setLocalItem("planpulse_user_subjects", []);
+          if (uid) {
+            try {
+              const snap = await getDocs(collection(db, `users/${uid}/subjects`));
+              const batch = writeBatch(db);
+              snap.docs.forEach((d) => batch.delete(d.ref));
+              await batch.commit();
+            } catch {}
+          }
+          return { ok: true, status: 200, data: { success: true, subjects: [] } as any };
+        }
+
         if (id === "reset" || (method === "POST" && pathname.endsWith("/reset"))) {
           setLocalItem("planpulse_user_subjects", DEFAULT_SUBJECTS);
           if (uid) {
@@ -676,13 +689,18 @@ export async function safeFetchJson<T = any>(
         }
 
         if (method === "GET") {
-          let subjects = getLocalItem<UserSubject[]>("planpulse_user_subjects", DEFAULT_SUBJECTS);
+          let subjects = getLocalItem<UserSubject[] | null>("planpulse_user_subjects", null);
+          if (subjects === null) {
+            subjects = DEFAULT_SUBJECTS;
+          }
           if (uid) {
             try {
               const snap = await getDocs(collection(db, `users/${uid}/subjects`));
               if (!snap.empty) {
                 subjects = snap.docs.map((d) => d.data() as UserSubject);
                 setLocalItem("planpulse_user_subjects", subjects);
+              } else if (localStorage.getItem("planpulse_user_subjects") === "[]") {
+                subjects = [];
               }
             } catch {}
           }

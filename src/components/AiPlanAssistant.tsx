@@ -148,6 +148,8 @@ export const AiPlanAssistant: React.FC<AiPlanAssistantProps> = ({
       const res = await safeFetchJson<{
         success: boolean;
         result: any;
+        subjects?: any[];
+        timetableEntries?: any[];
         engineUsed?: string;
         modelUsed?: string;
         fallbackUsed?: boolean;
@@ -167,7 +169,11 @@ export const AiPlanAssistant: React.FC<AiPlanAssistantProps> = ({
           fallback: !!res.data.fallbackUsed,
           cascadeLog: res.data.cascadeLog,
         });
-        onPlanParsed(res.data.result);
+        onPlanParsed({
+          ...res.data.result,
+          allSubjects: res.data.subjects,
+          allTimetableEntries: res.data.timetableEntries,
+        });
         confetti({ particleCount: 60, spread: 70, origin: { y: 0.6 } });
       } else {
         setParseError(res.error || res.data?.error || "Fehler beim KI-Import. Bitte erneut versuchen.");
@@ -333,7 +339,7 @@ export const AiPlanAssistant: React.FC<AiPlanAssistantProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <Sparkles className="w-4 h-4 text-amber-400" />
-              <h3 className="text-sm font-bold text-white">Stundenplan automatisch importieren</h3>
+              <h3 className="text-sm font-bold text-white">Stundenplan oder Lehrkräfte-Liste importieren</h3>
             </div>
             <div className="flex items-center space-x-2">
               <label className="text-[11px] text-slate-400 font-medium">Zielklasse:</label>
@@ -341,7 +347,7 @@ export const AiPlanAssistant: React.FC<AiPlanAssistantProps> = ({
                 type="text"
                 value={targetClass}
                 onChange={(e) => setTargetClass(e.target.value)}
-                placeholder="10A"
+                placeholder="9b"
                 className="w-16 bg-slate-950 border border-slate-800 rounded px-2 py-0.5 text-xs text-white focus:outline-none focus:border-amber-500"
               />
             </div>
@@ -369,7 +375,7 @@ export const AiPlanAssistant: React.FC<AiPlanAssistantProps> = ({
               }`}
             >
               <FileText className="w-4 h-4" />
-              <span>Text / Untis einfügen</span>
+              <span>Text / Liste einfügen</span>
             </button>
           </div>
 
@@ -393,10 +399,10 @@ export const AiPlanAssistant: React.FC<AiPlanAssistantProps> = ({
                     <UploadCloud className="w-6 h-6" />
                   </div>
                   <div className="text-xs font-bold text-white group-hover:text-amber-300">
-                    Foto oder Screenshot des Stundenplans auswählen
+                    Stundenplan-Foto oder Lehrerliste auswählen
                   </div>
                   <p className="text-[11px] text-slate-400 max-w-xs mx-auto">
-                    Klicke hier oder ziehe eine Bilddatei (JPG, PNG, WebP) hinein. Handschrift, Aushang oder Ausdruck wird per Bild-KI erkannt.
+                    Klicke hier oder ziehe eine Bilddatei hinein. Wochenplan, Lehrerliste (z.B. "Lehrkräfte von..."), Aushang oder Screenshot wird per KI automatisch erkannt und den Fächern zugeordnet!
                   </p>
                 </div>
               ) : (

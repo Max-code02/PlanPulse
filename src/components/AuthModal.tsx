@@ -19,6 +19,7 @@ import {
 import { AuthUser } from "../types";
 import { safeFetchJson } from "../lib/api";
 import { auth, db } from "../lib/firebase";
+import { executeRecaptcha, verifyRecaptchaWithBackend } from "../lib/recaptcha";
 import { 
   createUserWithEmailAndPassword, 
   signInWithEmailAndPassword, 
@@ -75,12 +76,25 @@ export const AuthModal: React.FC<AuthModalProps> = ({
 
     setLoading(true);
     try {
+      // Execute Google reCAPTCHA Enterprise check
+      const recaptchaAction = mode === "register" ? "REGISTER" : mode === "reset" ? "PASSWORD_RESET" : "LOGIN";
+      try {
+        const recaptchaToken = await executeRecaptcha(recaptchaAction);
+        if (recaptchaToken) {
+          // Send response token to backend verification endpoint
+          verifyRecaptchaWithBackend(recaptchaToken, recaptchaAction).catch(() => {});
+        }
+      } catch (rcErr) {
+        console.warn("[reCAPTCHA] Token retrieval:", rcErr);
+      }
+
       let firebaseUser: any = null;
-      let token = "dummy-token"; // Wir simulieren das Token für App.tsx
+      let token = "";
       
       if (mode === "register") {
         const userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, password);
         firebaseUser = userCredential.user;
+        token = firebaseUser.uid;
         const userObj: AuthUser = {
           id: firebaseUser.uid,
           email: cleanEmail,
@@ -101,6 +115,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
       } else if (mode === "login") {
         const userCredential = await signInWithEmailAndPassword(auth, cleanEmail, password);
         firebaseUser = userCredential.user;
+        token = firebaseUser.uid;
         
         let userObj: AuthUser = {
           id: firebaseUser.uid,
@@ -161,6 +176,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setError(null);
     setLoading(true);
     try {
+      try {
+        const recaptchaToken = await executeRecaptcha("GOOGLE_LOGIN");
+        if (recaptchaToken) {
+          verifyRecaptchaWithBackend(recaptchaToken, "GOOGLE_LOGIN").catch(() => {});
+        }
+      } catch (rcErr) {
+        console.warn("[reCAPTCHA] Google login token retrieval:", rcErr);
+      }
+
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       
@@ -471,6 +495,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                     </>
                   )}
                 </button>
+
+                {/* reCAPTCHA Enterprise Protection Notice */}
+                <div className="flex items-center justify-center space-x-1.5 text-[10px] text-slate-500 pt-1">
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                  <span>Geschützt durch <strong>Google reCAPTCHA Enterprise</strong></span>
+                </div>
               </form>
             </div>
           )}
