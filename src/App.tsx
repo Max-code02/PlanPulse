@@ -467,6 +467,7 @@ export default function App() {
   };
 
   const handleAiPlanParsed = async (parsedData?: any) => {
+    let hasChanges = false;
     if (parsedData?.timetableEntries && Array.isArray(parsedData.timetableEntries) && parsedData.timetableEntries.length > 0) {
       const newEntries = parsedData.timetableEntries;
       
@@ -489,8 +490,21 @@ export default function App() {
           console.warn("Firebase sync error for AI parsed plan", e);
         }
       }
+      hasChanges = true;
     }
+
+    if (parsedData?.extractedSubjects && Array.isArray(parsedData.extractedSubjects) && parsedData.extractedSubjects.length > 0) {
+      hasChanges = true;
+      showToast("Fächer & Lehrkräfte wurden erfolgreich erkannt!");
+    }
+
     fetchData();
+
+    if (hasChanges) {
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    }
   };
 
   // Config & Subscription Operations

@@ -2949,6 +2949,7 @@ Antworte ausschließlich im JSON-Format mit folgendem Schema:
 
       // Auto-apply timetable entries and synchronize with Fächer verwalten (userSubjects)
       if (parsedData.timetableEntries && Array.isArray(parsedData.timetableEntries)) {
+        const enrichedTimetable: any[] = [];
         parsedData.timetableEntries.forEach((tt: any) => {
           const rawSubj = (tt.subject || "Fach").trim();
           if (!rawSubj) return;
@@ -2979,7 +2980,6 @@ Antworte ausschließlich im JSON-Format mit folgendem Schema:
             // Auto-create subject in Fächer verwalten with assigned color!
             finalColor = tt.color || assignSubjectColor(rawSubj);
             finalSubjectName = rawSubj;
-
             const newSubject: UserSubject = {
               id: `sub-ai-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
               name: finalSubjectName,
@@ -2993,7 +2993,7 @@ Antworte ausschließlich im JSON-Format mit folgendem Schema:
             data.userSubjects.push(newSubject);
           }
 
-          data.timetableEntries.push({
+          const newEntry = {
             id: `tt-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
             day: tt.day || "Mo",
             period: tt.period || 1,
@@ -3005,13 +3005,18 @@ Antworte ausschließlich im JSON-Format mit folgendem Schema:
             status: tt.status || "regular",
             color: finalColor,
             note: tt.note,
-          });
+          };
+          
+          data.timetableEntries.push(newEntry);
+          enrichedTimetable.push(newEntry);
         });
 
-        if (user) {
-          user.timetableEntries = data.timetableEntries;
-          user.userSubjects = data.userSubjects;
-        }
+        parsedData.timetableEntries = enrichedTimetable;
+      }
+
+      if (user) {
+        user.timetableEntries = data.timetableEntries;
+        user.userSubjects = data.userSubjects;
       }
 
       saveDatabase();
