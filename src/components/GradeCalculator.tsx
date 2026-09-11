@@ -27,12 +27,14 @@ import {
   Search,
   CheckCircle2,
   Clock,
-  FileText
+  FileText,
+  Camera
 } from "lucide-react";
 import { GradeEntry, GradeType, TimetableEntry, UserSubject, SubjectGradeSummary } from "../types";
 import { safeFetchJson } from "../lib/api";
 import { auth, db } from "../lib/firebase";
 import { collection, doc, getDocs, setDoc, deleteDoc, writeBatch } from "firebase/firestore";
+import { SubjectAiCameraModal } from "./SubjectAiCameraModal";
 
 interface GradeCalculatorProps {
   entries: TimetableEntry[];
@@ -89,6 +91,7 @@ export const GradeCalculator: React.FC<GradeCalculatorProps> = ({ entries, onDat
   const [gradeModalOpen, setGradeModalOpen] = useState(false);
   const [editingGrade, setEditingGrade] = useState<GradeEntry | null>(null);
   const [subjectModalOpen, setSubjectModalOpen] = useState(false);
+  const [aiCameraModalOpen, setAiCameraModalOpen] = useState(false);
   const [editingSubject, setEditingSubject] = useState<UserSubject | null>(null);
   const [selectedSubjectFilter, setSelectedSubjectFilter] = useState<string>("ALL");
   const [searchSubject, setSearchSubject] = useState("");
@@ -1434,6 +1437,15 @@ export const GradeCalculator: React.FC<GradeCalculatorProps> = ({ entries, onDat
               </button>
 
               <button
+                onClick={() => setAiCameraModalOpen(true)}
+                className="flex items-center space-x-1.5 px-3.5 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold shadow-md transition-all"
+                title="Fächer & Lehrkräfte mit KI-Kamera oder Foto automatisch scannen"
+              >
+                <Camera className="w-4 h-4" />
+                <span>KI Foto-Scan</span>
+              </button>
+
+              <button
                 onClick={handleOpenAddSubject}
                 className="flex items-center space-x-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold shadow transition-colors"
               >
@@ -1465,15 +1477,24 @@ export const GradeCalculator: React.FC<GradeCalculatorProps> = ({ entries, onDat
               <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1 mb-4">
                 {searchSubject
                   ? `Kein Fach passt zu "${searchSubject}".`
-                  : "Lege deine Fächer an, um Noten gezielt zuzuordnen und im Stundenplan sofort auszuwählen."}
+                  : "Lege deine Fächer an, oder nutze die KI-Kamera, um Lehrkräfte und Fächer direkt vom Stundenplan zu importieren."}
               </p>
-              <button
-                onClick={handleOpenAddSubject}
-                className="inline-flex items-center space-x-1.5 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold shadow transition-colors"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Erstes Fach anlegen</span>
-              </button>
+              <div className="flex flex-wrap items-center justify-center gap-2.5">
+                <button
+                  onClick={() => setAiCameraModalOpen(true)}
+                  className="inline-flex items-center space-x-1.5 px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-bold shadow transition-colors"
+                >
+                  <Camera className="w-3.5 h-3.5" />
+                  <span>KI-Kamera / Foto scannen</span>
+                </button>
+                <button
+                  onClick={handleOpenAddSubject}
+                  className="inline-flex items-center space-x-1.5 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-xl text-xs font-bold border border-slate-700 shadow transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Manuell anlegen</span>
+                </button>
+              </div>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
@@ -1750,6 +1771,30 @@ export const GradeCalculator: React.FC<GradeCalculatorProps> = ({ entries, onDat
 
             <form onSubmit={handleSaveSubject} className="space-y-3.5 text-xs">
               
+              {/* Quick AI Camera Banner */}
+              {!editingSubject && (
+                <div className="flex items-center justify-between p-2.5 bg-gradient-to-r from-blue-950/60 to-indigo-950/60 border border-blue-800/60 rounded-xl">
+                  <div className="flex items-center space-x-2">
+                    <Camera className="w-4 h-4 text-blue-400 flex-shrink-0" />
+                    <div>
+                      <span className="font-bold text-white text-[11px] block">Stundenplan- oder Lehrerfoto parat?</span>
+                      <span className="text-[10px] text-blue-300/80">KI extrahiert Fächer, Kürzel & Lehrer automatisch</span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSubjectModalOpen(false);
+                      setAiCameraModalOpen(true);
+                    }}
+                    className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[10px] font-bold shadow transition-colors flex items-center space-x-1 flex-shrink-0"
+                  >
+                    <Sparkles className="w-3 h-3" />
+                    <span>KI-Foto scannen</span>
+                  </button>
+                </div>
+              )}
+
               {/* Name */}
               <div>
                 <label className="block text-slate-300 font-semibold mb-1">Fachname *</label>
@@ -1905,6 +1950,20 @@ export const GradeCalculator: React.FC<GradeCalculatorProps> = ({ entries, onDat
           </div>
         </div>
       )}
+
+      {/* ========================================================================= */}
+      {/* MODAL: KI-KAMERA / FOTO-SCAN FÜR FÄCHER & LEHRKRÄFTE */}
+      {/* ========================================================================= */}
+      <SubjectAiCameraModal
+        isOpen={aiCameraModalOpen}
+        onClose={() => setAiCameraModalOpen(false)}
+        onSubjectsImported={(newSubjects) => {
+          setSubjects(newSubjects);
+          if (onDataChange) onDataChange();
+        }}
+        existingSubjects={subjects}
+        targetClassDefault="9b"
+      />
 
     </div>
   );

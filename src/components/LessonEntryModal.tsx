@@ -12,10 +12,12 @@ import {
   BookOpen,
   Layers,
   FileText,
-  CheckCheck
+  CheckCheck,
+  Camera
 } from "lucide-react";
 import { TimetableEntry, DayOfWeek, LessonStatus, DevicePlatform } from "../types";
 import { PERIOD_TIMES, DAYS } from "../utils";
+import { SubjectAiCameraModal } from "./SubjectAiCameraModal";
 
 export const DEFAULT_SUBJECT_PRESETS = [
   { name: "Mathematik", short: "Mathe", color: "#2563eb", icon: "📐" },
@@ -92,6 +94,7 @@ export const LessonEntryModal: React.FC<LessonEntryModalProps> = ({
   const [selectedPeriodsByDay, setSelectedPeriodsByDay] = useState<Record<string, number[]>>({
     [initialDay]: [initialPeriod]
   });
+  const [aiCameraModalOpen, setAiCameraModalOpen] = useState(false);
 
   // Form State
   const [formData, setFormData] = useState<Partial<TimetableEntry>>({
@@ -360,7 +363,18 @@ export const LessonEntryModal: React.FC<LessonEntryModalProps> = ({
                     <BookOpen className="w-3.5 h-3.5 text-blue-400" />
                     <span>Schulfach *</span>
                   </label>
-                  <span className="text-[10px] text-blue-400 font-medium">1-Klick Auswahl</span>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      type="button"
+                      onClick={() => setAiCameraModalOpen(true)}
+                      className="text-[10px] bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 font-bold px-2 py-0.5 rounded-lg border border-blue-500/30 transition-all flex items-center space-x-1"
+                      title="Fächer & Lehrkräfte vom Stundenplan-Foto scannen"
+                    >
+                      <Camera className="w-3 h-3" />
+                      <span>Foto-Scan</span>
+                    </button>
+                    <span className="text-[10px] text-blue-400 font-medium">1-Klick Auswahl</span>
+                  </div>
                 </div>
 
                 {/* Direct Text Input for Custom Subject */}
@@ -855,6 +869,31 @@ export const LessonEntryModal: React.FC<LessonEntryModalProps> = ({
         </div>
 
       </div>
+
+      <SubjectAiCameraModal
+        isOpen={aiCameraModalOpen}
+        onClose={() => setAiCameraModalOpen(false)}
+        onSubjectsImported={(newSubjects) => {
+          if (newSubjects.length > 0) {
+            const first = newSubjects[0];
+            setFormData((prev) => ({
+              ...prev,
+              subject: first.name,
+              color: first.color,
+              teacher: first.teacher || prev.teacher,
+              room: first.room || prev.room,
+            }));
+          }
+        }}
+        existingSubjects={availableSubjects.map((s, idx) => ({
+          id: `subj-${idx}`,
+          name: s.name,
+          color: s.color,
+          teacher: s.teacher,
+          room: s.room,
+        }))}
+        targetClassDefault={formData.targetClass || "9b"}
+      />
     </div>
   );
 };
