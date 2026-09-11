@@ -171,6 +171,13 @@ export const GradeCalculator: React.FC<GradeCalculatorProps> = ({ entries, onDat
 
   useEffect(() => {
     fetchData();
+    const handleUpdate = () => {
+      fetchData();
+    };
+    window.addEventListener("planpulse_data_updated", handleUpdate);
+    return () => {
+      window.removeEventListener("planpulse_data_updated", handleUpdate);
+    };
   }, [fetchData]);
 
   // Merge timetable subject names into subject list if missing

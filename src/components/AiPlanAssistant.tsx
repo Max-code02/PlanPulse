@@ -531,8 +531,26 @@ export const AiPlanAssistant: React.FC<AiPlanAssistantProps> = ({
                 </div>
               )}
               {parseResult.extractedSubjects?.length > 0 && (
-                <div className="text-[11px] text-purple-300 bg-purple-950/30 p-2 rounded border border-purple-800/40">
-                  📚 {parseResult.extractedSubjects.length} Fächer/Lehrkräfte wurden erstellt.
+                <div className="space-y-2 mt-2">
+                  <div className="text-[12px] text-purple-300 bg-purple-950/40 p-2.5 rounded-lg border border-purple-800/50 flex items-center justify-between">
+                    <span className="font-semibold">📚 {parseResult.extractedSubjects.length} Fächer & Lehrkräfte erfolgreich angelegt:</span>
+                    <span className="text-[10px] text-emerald-400 bg-emerald-950/60 border border-emerald-800/40 px-2 py-0.5 rounded font-medium">
+                      Im Notenrechner & Plan aktiv
+                    </span>
+                  </div>
+                  <div className="max-h-44 overflow-y-auto space-y-1 pr-1 divide-y divide-slate-800/60 bg-slate-950/60 rounded-lg p-2 border border-slate-800/70">
+                    {parseResult.extractedSubjects.map((sub: any, idx: number) => (
+                      <div key={idx} className="flex items-center justify-between py-1 text-xs first:pt-0 last:pb-0">
+                        <span className="font-medium text-slate-200 flex items-center space-x-1.5">
+                          <span className="w-2 h-2 rounded-full bg-purple-400"></span>
+                          <span>{sub.name}</span>
+                        </span>
+                        <span className="text-purple-300 font-medium text-[11px] bg-purple-900/30 px-2 py-0.5 rounded border border-purple-800/30">
+                          {sub.teacher && sub.teacher !== "—" ? sub.teacher : "Keine Lehrkraft angegeben"}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               )}
             </div>

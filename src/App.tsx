@@ -411,8 +411,8 @@ export default function App() {
 
   const handleAdoptSchoolTemplate = async (templateId: string, mode: "replace" | "merge") => {
     try {
-      const data = await safeFetchJson(`/api/schools`);
-      const schools = data.schools || [];
+      const res = await safeFetchJson<{ schools: any[] }>(`/api/schools`);
+      const schools = res.data?.schools || [];
       let templateToAdopt = null;
       for (const s of schools) {
         if (s.plans) {
@@ -467,7 +467,6 @@ export default function App() {
   };
 
   const handleAiPlanParsed = async (parsedData?: any) => {
-    let hasChanges = false;
     if (parsedData?.timetableEntries && Array.isArray(parsedData.timetableEntries) && parsedData.timetableEntries.length > 0) {
       const newEntries = parsedData.timetableEntries;
       
@@ -490,21 +489,19 @@ export default function App() {
           console.warn("Firebase sync error for AI parsed plan", e);
         }
       }
-      hasChanges = true;
     }
 
     if (parsedData?.extractedSubjects && Array.isArray(parsedData.extractedSubjects) && parsedData.extractedSubjects.length > 0) {
-      hasChanges = true;
-      showToast("Fächer & Lehrkräfte wurden erfolgreich erkannt!");
+      showToast(`📚 ${parsedData.extractedSubjects.length} Fächer & Lehrkräfte erfolgreich angelegt!`);
+    } else if (parsedData?.timetableEntries && Array.isArray(parsedData.timetableEntries) && parsedData.timetableEntries.length > 0) {
+      showToast(`🗓️ ${parsedData.timetableEntries.length} Stunden erfolgreich übernommen!`);
     }
 
-    fetchData();
+    // Refresh application data from server
+    await fetchData();
 
-    if (hasChanges) {
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
-    }
+    // Notify other components (GradeCalculator, Timetable) immediately
+    window.dispatchEvent(new CustomEvent("planpulse_data_updated", { detail: parsedData }));
   };
 
   // Config & Subscription Operations

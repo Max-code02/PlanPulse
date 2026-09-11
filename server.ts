@@ -766,6 +766,7 @@ function fallbackParseTimetableText(text: string, targetClass = "10A") {
   const lines = text.split("\n").map((l) => l.trim()).filter(Boolean);
   const timetableEntries: any[] = [];
   const substitutions: any[] = [];
+  const extractedSubjects: any[] = [];
 
   const days: DayOfWeek[] = ["Mo", "Di", "Mi", "Do", "Fr"];
   const timeSlots: Record<number, string> = {
@@ -779,9 +780,16 @@ function fallbackParseTimetableText(text: string, targetClass = "10A") {
     8: "14:15 - 15:00",
   };
 
+  const knownSubjectsPattern = /^(Evang\.\s*Religionslehre|Kath\.\s*Religionslehre|Religionslehre|Religion|Ethik|Mathematik|Mathe|Deutsch|Englisch|Latein|Französisch|Spanisch|Physik|Chemie|Biologie|Geschichte|Wirtschaftsinformatik|Wirtschaft\s*und\s*Recht|Wirtschaft|Informatik|Kunst|Musik|Sport|Geographie|Erdkunde|Sozialkunde|Philosophie)/i;
+
   lines.forEach((line) => {
+    // Ignore header lines like "Lehrkräfte von..." or "Ganze Klasse"
+    if (line.toLowerCase().startsWith("lehrkräfte") || line.toLowerCase() === "ganze klasse" || line.toLowerCase() === "geteilte klassen") {
+      return;
+    }
+
     // Check substitution: e.g. "10A: 3. Stunde Deutsch entfällt"
-    if (line.toLowerCase().includes("entfällt") || line.toLowerCase().includes("vertretung") || line.toLowerCase().includes("raum")) {
+    if (line.toLowerCase().includes("entfällt") || line.toLowerCase().includes("vertretung") || (line.toLowerCase().includes("raum") && line.match(/\d/))) {
       const periodMatch = line.match(/(\d+)\.\s*stunde/i) || line.match(/stunde\s*(\d+)/i);
       const period = periodMatch ? parseInt(periodMatch[1], 10) : 1;
       const type: SubstitutionType = line.toLowerCase().includes("entfällt") ? "Entfall" : line.toLowerCase().includes("raum") ? "Raumänderung" : "Vertretung";
@@ -796,23 +804,46 @@ function fallbackParseTimetableText(text: string, targetClass = "10A") {
         type,
         info: line,
       });
-    } else {
-      // Normal line: e.g. "Montag 1. Mathe Hr. Schmidt R101"
-      const dayMatch = line.match(/(mo|di|mi|do|fr|montag|dienstag|mittwoch|donnerstag|freitag)/i);
-      let day: DayOfWeek = "Mo";
-      if (dayMatch) {
-        const d = dayMatch[1].toLowerCase();
-        if (d.startsWith("di")) day = "Di";
-        else if (d.startsWith("mi")) day = "Mi";
-        else if (d.startsWith("do")) day = "Do";
-        else if (d.startsWith("fr")) day = "Fr";
-      }
+      return;
+    }
 
-      const periodMatch = line.match(/(\d+)\./) || line.match(/(\d+)\s*std/i);
+    // Check pure subject + teacher line (e.g. "Deutsch Jutta Fischer" or "9_Ph_9b_Sr, Physik Almuth Schmitter")
+    let cleanLine = line;
+    if (cleanLine.includes(",")) {
+      const parts = cleanLine.split(",");
+      cleanLine = parts[parts.length - 1].trim();
+    }
+    const subjMatch = cleanLine.match(knownSubjectsPattern);
+    const dayMatch = cleanLine.match(/(mo|di|mi|do|fr|montag|dienstag|mittwoch|donnerstag|freitag)/i);
+
+    if (subjMatch && !dayMatch) {
+      const subjectName = subjMatch[1].trim();
+      let teacherName = cleanLine.substring(subjMatch[0].length).trim();
+      // Remove leading colon, dash, or whitespace
+      teacherName = teacherName.replace(/^[:\-–—\s]+/, "").trim();
+
+      extractedSubjects.push({
+        name: subjectName,
+        teacher: teacherName || "—",
+        room: "",
+      });
+      return;
+    }
+
+    // Normal timetable line with day/period: e.g. "Montag 1. Mathe Hr. Schmidt R101"
+    if (dayMatch) {
+      let day: DayOfWeek = "Mo";
+      const d = dayMatch[1].toLowerCase();
+      if (d.startsWith("di")) day = "Di";
+      else if (d.startsWith("mi")) day = "Mi";
+      else if (d.startsWith("do")) day = "Do";
+      else if (d.startsWith("fr")) day = "Fr";
+
+      const periodMatch = cleanLine.match(/(\d+)\./) || cleanLine.match(/(\d+)\s*std/i);
       const period = periodMatch ? parseInt(periodMatch[1], 10) : 1;
 
       // Extract subject words
-      const parts = line.split(/[\s,;:-]+/).filter((p) => p.length > 2);
+      const parts = cleanLine.split(/[\s,;:-]+/).filter((p) => p.length > 2);
       const subject = parts.find((p) => Object.keys(SUBJECT_COLORS).some((k) => k.toLowerCase() === p.toLowerCase())) || parts[1] || "Allgemein";
 
       timetableEntries.push({
@@ -825,14 +856,19 @@ function fallbackParseTimetableText(text: string, targetClass = "10A") {
         targetClass,
         status: "regular",
         color: assignSubjectColor(subject),
-        note: line,
+        note: cleanLine,
       });
     }
   });
 
+  const isSubjectList = extractedSubjects.length > 0 && timetableEntries.length === 0;
+
   return {
-    detectedType: substitutions.length > 0 ? "substitution" : "timetable",
-    summary: `Automatischer Algorithmus: ${timetableEntries.length} Stunden und ${substitutions.length} Vertretungsmeldungen erfasst.`,
+    detectedType: substitutions.length > 0 ? "substitution" : isSubjectList ? "subject_list" : "timetable",
+    summary: isSubjectList 
+      ? `Erfolgreich ${extractedSubjects.length} Fächer und Lehrkräfte für Klasse ${targetClass} erkannt und angelegt.`
+      : `Automatischer Algorithmus: ${timetableEntries.length} Stunden, ${extractedSubjects.length} Fächer und ${substitutions.length} Vertretungsmeldungen erfasst.`,
+    extractedSubjects,
     substitutions,
     timetableEntries,
   };
@@ -2568,7 +2604,11 @@ async function startServer() {
     if (isJson) {
       // Structured JSON Parser fallback
       const parsed = fallbackParseTimetableText(queryOrPrompt, targetClass);
-      parsed.summary = `🛡️ [${engineLabel}] Stundenplan für Klasse ${targetClass} erfolgreich verarbeitet (${parsed.timetableEntries.length} Stunden, ${parsed.substitutions.length} Vertretungen).`;
+      if (parsed.extractedSubjects && parsed.extractedSubjects.length > 0 && parsed.timetableEntries.length === 0) {
+        parsed.summary = `🛡️ [${engineLabel}] ${parsed.extractedSubjects.length} Fächer und Lehrkräfte für Klasse ${targetClass} erfolgreich erkannt und angelegt.`;
+      } else {
+        parsed.summary = `🛡️ [${engineLabel}] Stundenplan für Klasse ${targetClass} erfolgreich verarbeitet (${parsed.timetableEntries.length} Stunden, ${parsed.extractedSubjects?.length || 0} Fächer, ${parsed.substitutions.length} Vertretungen).`;
+      }
       return JSON.stringify(parsed);
     } else {
       // Assistant Chat advisor fallback
@@ -2617,34 +2657,38 @@ async function startServer() {
     }
 
     // Step 1: Try Google Gemini Models (Primary & Persona Simulation)
-    let systemInstruction = "Du bist ein hilfreicher KI-Assistent für Stundenpläne.";
+    let systemInstruction = "Du bist ein hochpräziser KI-Assistent für Schul-Stundenpläne, Fächer, Noten und Lehrkräfte.";
     if (preferredEngine === "claude") {
-      systemInstruction = "Du simulierst das Modell Claude 3.5 Sonnet. Du bist ein hilfreicher KI-Assistent für Stundenpläne.";
+      systemInstruction = "Du simulierst das Modell Claude 3.5 Sonnet. Du bist ein hilfreicher KI-Assistent für Stundenpläne und Fächer.";
     } else if (preferredEngine === "llama") {
-      systemInstruction = "Du simulierst das Modell Meta Llama-3.3 70B. Du bist ein hilfreicher KI-Assistent für Stundenpläne.";
+      systemInstruction = "Du simulierst das Modell Meta Llama-3.3 70B. Du bist ein hilfreicher KI-Assistent für Stundenpläne und Fächer.";
     }
 
+    // Determine timeout based on whether an image payload is being analyzed
+    const hasImage = typeof contentsPayload === "object" && Array.isArray(contentsPayload?.parts) && contentsPayload.parts.some((p: any) => p.inlineData);
+    const requestTimeoutMs = hasImage ? 30000 : 12000;
+
+    // Modern, supported multimodal models with ultra-low latency
     const geminiModels = [
-      "gemini-3.7-flash",
-      "gemini-2.5-flash",
-      "gemini-flash-latest",
-      "gemini-2.5-pro",
+      "gemini-3.5-flash-lite",
+      "gemini-3.1-flash-lite",
+      "gemini-3.8-flash",
     ];
 
-    // Normalize contents format for @google/genai
-    let formattedContents: any = contentsPayload;
-    if (typeof contentsPayload === "object" && contentsPayload.parts && !Array.isArray(contentsPayload)) {
-      formattedContents = [{ role: "user", parts: contentsPayload.parts }];
-    }
-    
-    // Inject persona into the first part of contents if it's text
-    if (Array.isArray(formattedContents) && formattedContents.length > 0 && formattedContents[0].parts && formattedContents[0].parts.length > 0) {
-       if (formattedContents[0].parts[0].text) {
-         formattedContents[0].parts[0].text = `${systemInstruction}\n\n${formattedContents[0].parts[0].text}`;
-       }
-    } else if (typeof contentsPayload === "string") {
-      formattedContents = [{ role: "user", parts: [{ text: `${systemInstruction}\n\n${contentsPayload}` }] }];
-    }
+    const withTimeout = <T>(promise: Promise<T>, ms = requestTimeoutMs): Promise<T> => {
+      return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error(`Timeout after ${ms}ms`)), ms);
+        promise
+          .then((res) => {
+            clearTimeout(timer);
+            resolve(res);
+          })
+          .catch((err) => {
+            clearTimeout(timer);
+            reject(err);
+          });
+      });
+    };
 
     const aiInstance = getAi();
     if (aiInstance) {
@@ -2655,18 +2699,23 @@ async function startServer() {
           console.log(`[Multi-AI] Attempting Engine: ${simulatedEngineName} (Model: ${model})...`);
           cascadeLog.push({ engine: simulatedEngineName, model, status: "attempting" });
           
-          const response = await aiInstance.models.generateContent({
-            model,
-            contents: formattedContents,
-            config: isJson
-              ? {
-                  responseMimeType: "application/json",
-                  temperature: 0.2,
-                }
-              : {
-                  temperature: 0.7,
-                },
-          });
+          const response = await withTimeout(
+            aiInstance.models.generateContent({
+              model,
+              contents: contentsPayload,
+              config: isJson
+                ? {
+                    systemInstruction,
+                    responseMimeType: "application/json",
+                    temperature: 0.1,
+                  }
+                : {
+                    systemInstruction,
+                    temperature: 0.7,
+                  },
+            }),
+            requestTimeoutMs
+          );
 
           const latencyMs = Date.now() - start;
           if (response && response.text) {
@@ -2688,7 +2737,7 @@ async function startServer() {
           
           cascadeLog[cascadeLog.length - 1].status = is503 ? "503_overloaded" : "failed";
           cascadeLog[cascadeLog.length - 1].latencyMs = latencyMs;
-          cascadeLog[cascadeLog.length - 1].detail = is503 ? "503 Server ausgelastet" : "Temporärer Fehler";
+          cascadeLog[cascadeLog.length - 1].detail = is503 ? "503 Server ausgelastet" : (msg.slice(0, 40) || "Temporärer Fehler");
 
           console.warn(`[Multi-AI] Gemini ${model} failed (${is503 ? "503 Overloaded" : "Error"}):`, msg);
         }
@@ -2697,12 +2746,14 @@ async function startServer() {
       console.log("[Multi-AI] Gemini API Key not provided, cascading directly to secondary engines...");
     }
 
+    const fallbackQuery = rawText && rawText.trim() ? rawText : "Stundenplan & Fächer";
+
     // Step 2: Try Claude 3.5 Sonnet Fallback Engine
-    console.log("[Multi-AI] Gemini 503 / Limit reached -> Activating Secondary Claude 3.5 Sonnet Engine...");
+    console.log("[Multi-AI] Gemini unavailable -> Activating Secondary Claude 3.5 Sonnet Engine...");
     const claudeStart = Date.now();
     cascadeLog.push({ engine: "Anthropic Claude", model: "claude-3-5-sonnet", status: "attempting" });
     try {
-      const claudeText = generateSecondaryAiResponse(rawText, isJson, targetClass, entries, substitutions, "claude");
+      const claudeText = generateSecondaryAiResponse(fallbackQuery, isJson, targetClass, entries, substitutions, "claude");
       const claudeLatency = Date.now() - claudeStart;
       cascadeLog[cascadeLog.length - 1].status = "success";
       cascadeLog[cascadeLog.length - 1].latencyMs = claudeLatency;
@@ -2722,7 +2773,7 @@ async function startServer() {
     const llamaStart = Date.now();
     cascadeLog.push({ engine: "Meta Llama (Open-Source)", model: "llama-3.3-70b-instruct", status: "attempting" });
     try {
-      const llamaText = generateSecondaryAiResponse(rawText, isJson, targetClass, entries, substitutions, "llama");
+      const llamaText = generateSecondaryAiResponse(fallbackQuery, isJson, targetClass, entries, substitutions, "llama");
       const llamaLatency = Date.now() - llamaStart;
       cascadeLog[cascadeLog.length - 1].status = "success";
       cascadeLog[cascadeLog.length - 1].latencyMs = llamaLatency;
@@ -2738,7 +2789,7 @@ async function startServer() {
     }
 
     // Step 4: Final offline structural rule core
-    const offlineText = generateSecondaryAiResponse(rawText, isJson, targetClass, entries, substitutions, "claude");
+    const offlineText = generateSecondaryAiResponse(fallbackQuery, isJson, targetClass, entries, substitutions, "claude");
     cascadeLog.push({ engine: "Offline-Algorithmus", model: "Rule-Core-v2", status: "success", latencyMs: 1 });
     return {
       text: offlineText,
@@ -2792,66 +2843,43 @@ async function startServer() {
         return res.status(400).json({ error: "Bitte gib Text ein oder lade ein Foto deines Stundenplans hoch." });
       }
 
-      const promptInstruction = `Du bist ein hochpräziser KI-Parser für Schul-Stundenpläne, Vertretungspläne, Fächer- oder Lehrerlisten und Fotos davon (Aushänge, handschriftliche Pläne, Tafel, Untis, Excel, Webuntis).
-Analysiere die Eingabe (${imageBase64 ? "Stundenplan/Fächer-FOTO" : "Text"}) und wandle alle Stunden, Zeiten, Fächer, Räume und Lehrer in valides JSON um.
+      const promptInstruction = `Du bist ein hochpräziser KI-Parser für Schul-Stundenpläne, Fächer- und Lehrerlisten, Vertretungspläne und Fotos davon (Aushänge, Notenübersichten, Untis, Excel, Tafel).
+Analysiere die Eingabe (${imageBase64 ? "Foto/Bild (z.B. Lehrerliste, Stundenplan)" : "Text"}) und wandle alle Daten vollständig und präzise in valides JSON um.
 Ziel-Klasse / Gruppe: "${targetClass}"
-Modus: "${targetMode || "Schule/Vertretung"}"
+Modus: "${targetMode || "Schule/Fächer/Lehrer"}"
 
-${rawText ? `Eingabetext:\n"""\n${rawText}\n"""` : "Lies alle Daten direkt aus dem beigefügten Foto aus."}
+${rawText ? `Eingabetext:\n"""\n${rawText}\n"""` : "Lies alle Daten direkt aus dem beigefügten Bild/Foto aus."}
 
-Wichtig für Stunden:
-- Bestimme für jede Stunde den Tag (Mo, Di, Mi, Do, Fr).
-- Bestimme die Stunde/Periode (1 bis 8).
-- Bestimme Standardzeiten (z.B. 1. Std: 08:00 - 08:45, 2. Std: 08:45 - 09:30, 3. Std: 09:45 - 10:30, etc.).
-- Setze ein passendes Fach (z.B. Mathematik, Deutsch, Englisch, Physik, Chemie, Sport, Kunst, Biologie, Geschichte, etc.).
-- WICHTIG: Extrahiere unbedingt auch die Lehrkräfte (Lehrer/Lehrerin) und ordne sie den jeweiligen Fächern zu!
+WICHTIGE ANWEISUNGEN FÜR LEHRERLISTEN / FÄCHERLISTEN (wie "Lehrkräfte von...", "Ganze Klasse", "Geteilte Klassen"):
+- Wenn das Dokument oder Foto eine Liste von Fächern und ihren Lehrkräften zeigt, extrahiere JEDES EINZELNE FACH und die dazugehörige LEHRKRAFT in das "extractedSubjects" Array!
+- Auch bei geteilten Klassen oder mehreren Lehrkräften pro Fach (z.B. Sport Jana Stark, Jochen Hassel) alle erfassen!
+- Bei reinen Fächer-/Lehrerlisten (ohne Wochentage wie Mo-Fr und Unterrichtszeiten): Setze "detectedType": "subject_list", lasse "timetableEntries": [] leer und befülle VOLLSTÄNDIG "extractedSubjects"!
 
-Wenn das Bild eine reine Liste von Fächern und Lehrkräften ist (ohne feste Zeiten), fülle primär die "extractedSubjects" Liste aus!
+WICHTIGE ANWEISUNGEN FÜR STUNDENPLÄNE (nur falls Wochentage Mo, Di, Mi, Do, Fr und Perioden 1-8 vorhanden sind):
+- Bestimme für jede Unterrichtsstunde den Tag (Mo, Di, Mi, Do, Fr), die Periode (1 bis 8), Uhrzeit (z.B. 08:00 - 08:45), Fach, Lehrkraft und Raum.
+- Ordne den Fächern immer auch die passende Lehrkraft zu.
 
 Antworte ausschließlich im JSON-Format mit folgendem Schema:
 {
-  "detectedType": "substitution" | "timetable" | "event" | "subject_list",
-  "summary": "Kurze deutsche Zusammenfassung der erkannten Daten (z.B. 'Stundenplan für Klasse 10A mit 28 Unterrichtsstunden erfolgreich erkannt.' oder '15 Fächer und Lehrkräfte erkannt.')",
+  "detectedType": "subject_list" | "timetable" | "substitution",
+  "summary": "Deutsche Zusammenfassung (z.B. '21 Fächer und Lehrkräfte für Klasse 9b erfolgreich erkannt.')",
   "extractedSubjects": [
     {
-      "name": "Name des Fachs (z.B. Mathematik)",
-      "teacher": "Name der Lehrkraft (z.B. Frau Müller)",
+      "name": "Name des Fachs (z.B. Deutsch, Mathematik, Physik, Evang. Religionslehre)",
+      "teacher": "Name der Lehrkraft (z.B. Jutta Fischer, Dr. Kai Konrad)",
       "room": "Raum (falls angegeben, sonst leer)"
     }
   ],
-  "substitutions": [
-    {
-      "period": number (1 bis 10),
-      "targetClass": string,
-      "subject": string,
-      "originalTeacher": string,
-      "substituteTeacher": string,
-      "room": string,
-      "type": "Vertretung" | "Entfall" | "Raumänderung" | "Selbststudium" | "Klausur",
-      "info": string
-    }
-  ],
-  "timetableEntries": [
-    {
-      "day": "Mo" | "Di" | "Mi" | "Do" | "Fr",
-      "period": number (1 bis 8),
-      "time": string,
-      "subject": string,
-      "teacher": string,
-      "room": string,
-      "targetClass": string,
-      "status": "regular" | "cancelled" | "substituted" | "room_changed" | "exam",
-      "color": string (optional hex-farbe wie #2563eb, #dc2626, #7c3aed, #059669),
-      "note": string
-    }
-  ]
+  "substitutions": [],
+  "timetableEntries": []
 }`;
 
       let contentsPayload: any;
       if (imageBase64) {
         // Strip data:image/...;base64, header if present
         const cleanBase64 = imageBase64.includes(",") ? imageBase64.split(",")[1] : imageBase64;
-        const mime = imageMimeType || (imageBase64.startsWith("data:image/png") ? "image/png" : "image/jpeg");
+        const mimeMatch = imageBase64.match(/^data:([^;]+);base64,/);
+        const mime = imageMimeType || (mimeMatch ? mimeMatch[1] : (imageBase64.startsWith("data:image/png") ? "image/png" : "image/jpeg"));
         contentsPayload = {
           parts: [
             {
@@ -2907,7 +2935,7 @@ Antworte ausschließlich im JSON-Format mit folgendem Schema:
       }
 
       // Initialize subjects if empty
-      if (!data.userSubjects ) {
+      if (!data.userSubjects) {
         data.userSubjects = [...DEFAULT_SUBJECTS];
       }
 
@@ -2923,12 +2951,19 @@ Antworte ausschließlich im JSON-Format mit folgendem Schema:
               (s.code && s.code.toLowerCase() === rawSubj.toLowerCase())
           );
 
+          const teacherClean = (sub.teacher || "").replace(/^—$/, "").trim();
+          const roomClean = (sub.room || "").replace(/^—$/, "").trim();
+
           if (existingSub) {
-            if ((!existingSub.teacher || existingSub.teacher === "") && sub.teacher && sub.teacher !== "—") {
-              existingSub.teacher = sub.teacher;
+            if (teacherClean) {
+              if (!existingSub.teacher || existingSub.teacher === "—" || existingSub.teacher === "") {
+                existingSub.teacher = teacherClean;
+              } else if (!existingSub.teacher.toLowerCase().includes(teacherClean.toLowerCase())) {
+                existingSub.teacher = `${existingSub.teacher}, ${teacherClean}`;
+              }
             }
-            if ((!existingSub.room || existingSub.room === "") && sub.room && sub.room !== "—") {
-              existingSub.room = sub.room;
+            if (roomClean) {
+              existingSub.room = roomClean;
             }
           } else {
             const finalColor = assignSubjectColor(rawSubj);
@@ -2939,10 +2974,24 @@ Antworte ausschließlich im JSON-Format mit folgendem Schema:
               color: finalColor,
               targetGrade: 2.0,
               oralRatio: 50,
-              teacher: sub.teacher && sub.teacher !== "—" ? sub.teacher : "",
-              room: sub.room && sub.room !== "—" ? sub.room : "",
+              teacher: teacherClean,
+              room: roomClean,
             };
             data.userSubjects.push(newSubject);
+          }
+
+          // Also update timetable entries with this subject if teacher is found
+          if (teacherClean) {
+            data.timetableEntries.forEach((tt) => {
+              if (tt.subject && tt.subject.toLowerCase() === rawSubj.toLowerCase()) {
+                if (!tt.teacher || tt.teacher === "—" || tt.teacher === "") {
+                  tt.teacher = teacherClean;
+                }
+                if (roomClean && (!tt.room || tt.room === "—" || tt.room === "")) {
+                  tt.room = roomClean;
+                }
+              }
+            });
           }
         });
       }
@@ -3023,6 +3072,8 @@ Antworte ausschließlich im JSON-Format mit folgendem Schema:
       res.json({
         success: true,
         result: parsedData,
+        subjects: data.userSubjects,
+        timetableEntries: data.timetableEntries,
         engineUsed: cascadeResult.engineUsed,
         modelUsed: cascadeResult.modelUsed,
         fallbackUsed: cascadeResult.fallbackUsed,

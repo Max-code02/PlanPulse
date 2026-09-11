@@ -68,6 +68,162 @@
         "status": "regular",
         "color": "#059669",
         "note": ""
+      },
+      {
+        "id": "tt-1789132955817-7624",
+        "day": "Mo",
+        "period": 1,
+        "time": "08:00 - 08:45",
+        "subject": "von",
+        "teacher": "—",
+        "room": "—",
+        "targetClass": "10A",
+        "status": "regular",
+        "color": "#0891b2",
+        "note": "Lehrkräfte von Max Kistner"
+      },
+      {
+        "id": "tt-1789132955817-9zq4",
+        "day": "Mo",
+        "period": 1,
+        "time": "08:00 - 08:45",
+        "subject": "Deutsch",
+        "teacher": "Jutta Fischer",
+        "room": "—",
+        "targetClass": "10A",
+        "status": "regular",
+        "color": "#dc2626",
+        "note": "Deutsch Jutta Fischer"
+      },
+      {
+        "id": "tt-1789132955817-bump",
+        "day": "Di",
+        "period": 1,
+        "time": "08:00 - 08:45",
+        "subject": "Englisch",
+        "teacher": "Herr Becker",
+        "room": "—",
+        "targetClass": "10A",
+        "status": "regular",
+        "color": "#7c3aed",
+        "note": "Englisch Diana Geck"
+      },
+      {
+        "id": "tt-1789132955817-74fd",
+        "day": "Mo",
+        "period": 1,
+        "time": "08:00 - 08:45",
+        "subject": "Mathematik",
+        "teacher": "Bernadette Sicheneder",
+        "room": "—",
+        "targetClass": "10A",
+        "status": "regular",
+        "color": "#2563eb",
+        "note": "Mathematik Bernadette Sicheneder"
+      },
+      {
+        "id": "tt-1789132955817-49s0",
+        "day": "Mo",
+        "period": 1,
+        "time": "08:00 - 08:45",
+        "subject": "Informatik",
+        "teacher": "Dr. Iljana Zähle",
+        "room": "—",
+        "targetClass": "10A",
+        "status": "regular",
+        "color": "#0d9488",
+        "note": "Informatik Dr. Iljana Zähle"
+      },
+      {
+        "id": "tt-1789132955817-5doe",
+        "day": "Mo",
+        "period": 1,
+        "time": "08:00 - 08:45",
+        "subject": "Physik",
+        "teacher": "Kelly Reble",
+        "room": "—",
+        "targetClass": "10A",
+        "status": "regular",
+        "color": "#0891b2",
+        "note": "Physik Kelly Reble"
+      },
+      {
+        "id": "tt-1789132955817-xeym",
+        "day": "Mi",
+        "period": 1,
+        "time": "08:00 - 08:45",
+        "subject": "Chemie",
+        "teacher": "Dr. Kai Konrad",
+        "room": "—",
+        "targetClass": "10A",
+        "status": "regular",
+        "color": "#059669",
+        "note": "Chemie Dr. Kai Konrad"
+      },
+      {
+        "id": "tt-1789132955817-cz1j",
+        "day": "Mo",
+        "period": 1,
+        "time": "08:00 - 08:45",
+        "subject": "Biologie",
+        "teacher": "Dr. Kai Konrad",
+        "room": "—",
+        "targetClass": "10A",
+        "status": "regular",
+        "color": "#16a34a",
+        "note": "Biologie Dr. Kai Konrad"
+      },
+      {
+        "id": "tt-1789132955817-tmgn",
+        "day": "Mo",
+        "period": 1,
+        "time": "08:00 - 08:45",
+        "subject": "Geschichte",
+        "teacher": "Dr. Rainer Bach",
+        "room": "—",
+        "targetClass": "10A",
+        "status": "regular",
+        "color": "#d97706",
+        "note": "Geschichte Dr. Rainer Bach"
+      },
+      {
+        "id": "tt-1789132955817-p9q0",
+        "day": "Mo",
+        "period": 1,
+        "time": "08:00 - 08:45",
+        "subject": "Sport",
+        "teacher": "Jana Stark, Jochen Hassel",
+        "room": "—",
+        "targetClass": "10A",
+        "status": "regular",
+        "color": "#ea580c",
+        "note": "Sport Jana Stark"
+      },
+      {
+        "id": "tt-1789133299049-vvrk",
+        "day": "Mi",
+        "period": 1,
+        "time": "08:00 - 08:45",
+        "subject": "Chemie",
+        "teacher": "—",
+        "room": "—",
+        "targetClass": "9b",
+        "status": "regular",
+        "color": "#059669",
+        "note": "Chemie Dr. Kai Konrad"
+      },
+      {
+        "id": "tt-1789133299049-cate",
+        "day": "Do",
+        "period": 1,
+        "time": "08:00 - 08:45",
+        "subject": "Kunst",
+        "teacher": "—",
+        "room": "—",
+        "targetClass": "9b",
+        "status": "regular",
+        "color": "#db2777",
+        "note": "Kunst Dorette Jansen"
       }
     ],
     "homeworkItems": [],
@@ -83,7 +239,168 @@
       "webhookUrl": "",
       "notifyOnSubstitutions": true
     },
-    "userSubjects": []
+    "userSubjects": [
+      {
+        "id": "sub-ai-1789132955817-c9zlu",
+        "name": "von",
+        "code": "VON",
+        "color": "#0891b2",
+        "targetGrade": 2,
+        "oralRatio": 50,
+        "teacher": "",
+        "room": ""
+      },
+      {
+        "id": "sub-ai-1789132955817-bwmtl",
+        "name": "Deutsch",
+        "code": "DEU",
+        "color": "#dc2626",
+        "targetGrade": 2,
+        "oralRatio": 50,
+        "teacher": "Jutta Fischer, Herr Müller, Frau Fischer",
+        "room": ""
+      },
+      {
+        "id": "sub-ai-1789132955817-ixoy5",
+        "name": "Englisch",
+        "code": "ENG",
+        "color": "#7c3aed",
+        "targetGrade": 2,
+        "oralRatio": 50,
+        "teacher": "Herr Becker",
+        "room": ""
+      },
+      {
+        "id": "sub-ai-1789132955817-p9bk2",
+        "name": "Mathematik",
+        "code": "MAT",
+        "color": "#2563eb",
+        "targetGrade": 2,
+        "oralRatio": 50,
+        "teacher": "Bernadette Sicheneder, Herr Schmidt",
+        "room": ""
+      },
+      {
+        "id": "sub-ai-1789132955817-xaite",
+        "name": "Informatik",
+        "code": "INF",
+        "color": "#0d9488",
+        "targetGrade": 2,
+        "oralRatio": 50,
+        "teacher": "Dr. Iljana Zähle",
+        "room": ""
+      },
+      {
+        "id": "sub-ai-1789132955817-e9212",
+        "name": "Physik",
+        "code": "PHY",
+        "color": "#0891b2",
+        "targetGrade": 2,
+        "oralRatio": 50,
+        "teacher": "Kelly Reble, Herr Dr. Konrad",
+        "room": ""
+      },
+      {
+        "id": "sub-ai-1789132955817-c23dc",
+        "name": "Chemie",
+        "code": "CHE",
+        "color": "#059669",
+        "targetGrade": 2,
+        "oralRatio": 50,
+        "teacher": "Dr. Kai Konrad",
+        "room": ""
+      },
+      {
+        "id": "sub-ai-1789132955817-cay59",
+        "name": "Biologie",
+        "code": "BIO",
+        "color": "#16a34a",
+        "targetGrade": 2,
+        "oralRatio": 50,
+        "teacher": "Dr. Kai Konrad",
+        "room": ""
+      },
+      {
+        "id": "sub-ai-1789132955817-salgg",
+        "name": "Geschichte",
+        "code": "GES",
+        "color": "#d97706",
+        "targetGrade": 2,
+        "oralRatio": 50,
+        "teacher": "Dr. Rainer Bach",
+        "room": ""
+      },
+      {
+        "id": "sub-ai-1789132955817-x66sk",
+        "name": "Sport",
+        "code": "SPO",
+        "color": "#ea580c",
+        "targetGrade": 2,
+        "oralRatio": 50,
+        "teacher": "Jana Stark, Jochen Hassel",
+        "room": ""
+      },
+      {
+        "id": "sub-ai-1789133199962-elteb",
+        "name": "Evang. Religionslehre",
+        "code": "EVA",
+        "color": "#4f46e5",
+        "targetGrade": 2,
+        "oralRatio": 50,
+        "teacher": "Martina Steubing-Nickel",
+        "room": ""
+      },
+      {
+        "id": "sub-ai-1789133199962-mg7im",
+        "name": "Latein",
+        "code": "LAT",
+        "color": "#b45309",
+        "targetGrade": 2,
+        "oralRatio": 50,
+        "teacher": "Katharina Weikert",
+        "room": ""
+      },
+      {
+        "id": "sub-ai-1789133199962-fwmox",
+        "name": "Wirtschaft und Recht",
+        "code": "WIR",
+        "color": "#059669",
+        "targetGrade": 2,
+        "oralRatio": 50,
+        "teacher": "Bernhard Ruhl",
+        "room": ""
+      },
+      {
+        "id": "sub-ai-1789133199962-cac3i",
+        "name": "Kunst",
+        "code": "KUN",
+        "color": "#db2777",
+        "targetGrade": 2,
+        "oralRatio": 50,
+        "teacher": "Dorette Jansen",
+        "room": ""
+      },
+      {
+        "id": "sub-ai-1789133199962-c4ue8",
+        "name": "Musik",
+        "code": "MUS",
+        "color": "#9333ea",
+        "targetGrade": 2,
+        "oralRatio": 50,
+        "teacher": "Christine Gaillard",
+        "room": ""
+      },
+      {
+        "id": "sub-ai-1789135209194-dgm9u",
+        "name": "Mathe",
+        "code": "MAT",
+        "color": "#2563eb",
+        "targetGrade": 2,
+        "oralRatio": 50,
+        "teacher": "Frau Schmidt",
+        "room": ""
+      }
+    ]
   },
   "registeredSchools": [
     {
