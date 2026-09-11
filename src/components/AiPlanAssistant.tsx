@@ -29,7 +29,7 @@ import { safeFetchJson } from "../lib/api";
 
 interface AiPlanAssistantProps {
   isPremium?: boolean;
-  onPlanParsed: () => void;
+  onPlanParsed: (parsedData?: any) => void;
   onUpgradeClick?: () => void;
   targetClassDefault?: string;
 }
@@ -167,7 +167,7 @@ export const AiPlanAssistant: React.FC<AiPlanAssistantProps> = ({
           fallback: !!res.data.fallbackUsed,
           cascadeLog: res.data.cascadeLog,
         });
-        onPlanParsed();
+        onPlanParsed(res.data.result);
         confetti({ particleCount: 60, spread: 70, origin: { y: 0.6 } });
       } else {
         setParseError(res.error || res.data?.error || "Fehler beim KI-Import. Bitte erneut versuchen.");
@@ -528,6 +528,11 @@ export const AiPlanAssistant: React.FC<AiPlanAssistantProps> = ({
                     <Palette className="w-3 h-3" />
                     <span>Farben zugewiesen</span>
                   </span>
+                </div>
+              )}
+              {parseResult.extractedSubjects?.length > 0 && (
+                <div className="text-[11px] text-purple-300 bg-purple-950/30 p-2 rounded border border-purple-800/40">
+                  📚 {parseResult.extractedSubjects.length} Fächer/Lehrkräfte wurden erstellt.
                 </div>
               )}
             </div>

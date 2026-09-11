@@ -2784,24 +2784,33 @@ async function startServer() {
         return res.status(400).json({ error: "Bitte gib Text ein oder lade ein Foto deines Stundenplans hoch." });
       }
 
-      const promptInstruction = `Du bist ein hochpräziser KI-Parser für Schul-Stundenpläne, Vertretungspläne und Fotos von Stundenplänen (Aushänge, handschriftliche Pläne, Tafel, Untis, Excel, Webuntis).
-Analysiere die Eingabe (${imageBase64 ? "Stundenplan-FOTO" : "Text"}) und wandle alle Stunden, Zeiten, Fächer, Räume und Lehrer in valides JSON um.
+      const promptInstruction = `Du bist ein hochpräziser KI-Parser für Schul-Stundenpläne, Vertretungspläne, Fächer- oder Lehrerlisten und Fotos davon (Aushänge, handschriftliche Pläne, Tafel, Untis, Excel, Webuntis).
+Analysiere die Eingabe (${imageBase64 ? "Stundenplan/Fächer-FOTO" : "Text"}) und wandle alle Stunden, Zeiten, Fächer, Räume und Lehrer in valides JSON um.
 Ziel-Klasse / Gruppe: "${targetClass}"
 Modus: "${targetMode || "Schule/Vertretung"}"
 
-${rawText ? `Eingabetext:\n"""\n${rawText}\n"""` : "Lies alle Daten direkt aus dem beigefügten Stundenplan-Foto aus."}
+${rawText ? `Eingabetext:\n"""\n${rawText}\n"""` : "Lies alle Daten direkt aus dem beigefügten Foto aus."}
 
 Wichtig für Stunden:
 - Bestimme für jede Stunde den Tag (Mo, Di, Mi, Do, Fr).
 - Bestimme die Stunde/Periode (1 bis 8).
 - Bestimme Standardzeiten (z.B. 1. Std: 08:00 - 08:45, 2. Std: 08:45 - 09:30, 3. Std: 09:45 - 10:30, etc.).
 - Setze ein passendes Fach (z.B. Mathematik, Deutsch, Englisch, Physik, Chemie, Sport, Kunst, Biologie, Geschichte, etc.).
-- WICHTIG: Extrahiere unbedingt auch die Lehrkräfte (Lehrer/Lehrerin) und ordne sie den jeweiligen Fächern zu, sofern diese auf dem Bild oder im Text stehen!
+- WICHTIG: Extrahiere unbedingt auch die Lehrkräfte (Lehrer/Lehrerin) und ordne sie den jeweiligen Fächern zu!
+
+Wenn das Bild eine reine Liste von Fächern und Lehrkräften ist (ohne feste Zeiten), fülle primär die "extractedSubjects" Liste aus!
 
 Antworte ausschließlich im JSON-Format mit folgendem Schema:
 {
-  "detectedType": "substitution" | "timetable" | "event",
-  "summary": "Kurze deutsche Zusammenfassung der erkannten Daten (z.B. 'Stundenplan für Klasse 10A mit 28 Unterrichtsstunden erfolgreich erkannt.')",
+  "detectedType": "substitution" | "timetable" | "event" | "subject_list",
+  "summary": "Kurze deutsche Zusammenfassung der erkannten Daten (z.B. 'Stundenplan für Klasse 10A mit 28 Unterrichtsstunden erfolgreich erkannt.' oder '15 Fächer und Lehrkräfte erkannt.')",
+  "extractedSubjects": [
+    {
+      "name": "Name des Fachs (z.B. Mathematik)",
+      "teacher": "Name der Lehrkraft (z.B. Frau Müller)",
+      "room": "Raum (falls angegeben, sonst leer)"
+    }
+  ],
   "substitutions": [
     {
       "period": number (1 bis 10),
@@ -2889,11 +2898,48 @@ Antworte ausschließlich im JSON-Format mit folgendem Schema:
         });
       }
 
-      // Auto-apply timetable entries and synchronize with Fächer verwalten (userSubjects)
+      // Initialize subjects if empty
       if (!data.userSubjects || data.userSubjects.length === 0) {
         data.userSubjects = [...DEFAULT_SUBJECTS];
       }
 
+      // Process extracted subjects (pure subject/teacher lists)
+      if (parsedData.extractedSubjects && Array.isArray(parsedData.extractedSubjects)) {
+        parsedData.extractedSubjects.forEach((sub: any) => {
+          const rawSubj = (sub.name || "").trim();
+          if (!rawSubj) return;
+
+          let existingSub = data.userSubjects.find(
+            (s) =>
+              s.name.toLowerCase() === rawSubj.toLowerCase() ||
+              (s.code && s.code.toLowerCase() === rawSubj.toLowerCase())
+          );
+
+          if (existingSub) {
+            if ((!existingSub.teacher || existingSub.teacher === "") && sub.teacher && sub.teacher !== "—") {
+              existingSub.teacher = sub.teacher;
+            }
+            if ((!existingSub.room || existingSub.room === "") && sub.room && sub.room !== "—") {
+              existingSub.room = sub.room;
+            }
+          } else {
+            const finalColor = assignSubjectColor(rawSubj);
+            const newSubject: UserSubject = {
+              id: `sub-ai-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+              name: rawSubj,
+              code: rawSubj.substring(0, 3).toUpperCase(),
+              color: finalColor,
+              targetGrade: 2.0,
+              oralRatio: 50,
+              teacher: sub.teacher && sub.teacher !== "—" ? sub.teacher : "",
+              room: sub.room && sub.room !== "—" ? sub.room : "",
+            };
+            data.userSubjects.push(newSubject);
+          }
+        });
+      }
+
+      // Auto-apply timetable entries and synchronize with Fächer verwalten (userSubjects)
       if (parsedData.timetableEntries && Array.isArray(parsedData.timetableEntries)) {
         parsedData.timetableEntries.forEach((tt: any) => {
           const rawSubj = (tt.subject || "Fach").trim();

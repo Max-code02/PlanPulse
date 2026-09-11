@@ -385,7 +385,16 @@ export default function App() {
         }
       } else {
         setTimetableEntries([]);
-        showToast("Gesamter Stundenplan geleert. Bereit für deine eigenen Eintragungen.");
+        showToast("Gesamter Stundenplan und Fächer geleert. Bereit für einen Neustart.");
+        
+        // Also reset subjects
+        try {
+          const headers = getAuthHeaders();
+          await safeFetchJson("/api/subjects/reset", { method: "POST", headers });
+        } catch (e) {
+          console.warn("Failed to reset subjects", e);
+        }
+
         if (auth.currentUser) {
           try {
             const snap = await getDocs(collection(db, `users/${auth.currentUser.uid}/timetable`));
@@ -455,6 +464,33 @@ export default function App() {
       console.error("Adopt template error:", err);
       showToast("Fehler bei der Planübernahme.");
     }
+  };
+
+  const handleAiPlanParsed = async (parsedData?: any) => {
+    if (parsedData?.timetableEntries && Array.isArray(parsedData.timetableEntries) && parsedData.timetableEntries.length > 0) {
+      const newEntries = parsedData.timetableEntries;
+      
+      // Update state immediately
+      setTimetableEntries((prev) => {
+        return [...prev, ...newEntries];
+      });
+
+      // Sync to Firebase if logged in
+      if (auth.currentUser) {
+        try {
+          const { writeBatch, doc } = await import("firebase/firestore");
+          const batch = writeBatch(db);
+          newEntries.forEach((entry: any) => {
+            const docRef = doc(db, `users/${auth.currentUser.uid}/timetable`, entry.id);
+            batch.set(docRef, entry);
+          });
+          await batch.commit();
+        } catch (e) {
+          console.warn("Firebase sync error for AI parsed plan", e);
+        }
+      }
+    }
+    fetchData();
   };
 
   // Config & Subscription Operations
@@ -596,7 +632,7 @@ export default function App() {
         {activeTab === "ai" && (
           <AiPlanAssistant
             isPremium={userConfig.planType === "premium"}
-            onPlanParsed={fetchData}
+            onPlanParsed={handleAiPlanParsed}
             onUpgradeClick={() => handleNavigate("freemium")}
           />
         )}
