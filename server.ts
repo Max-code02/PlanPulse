@@ -2796,6 +2796,7 @@ Wichtig für Stunden:
 - Bestimme die Stunde/Periode (1 bis 8).
 - Bestimme Standardzeiten (z.B. 1. Std: 08:00 - 08:45, 2. Std: 08:45 - 09:30, 3. Std: 09:45 - 10:30, etc.).
 - Setze ein passendes Fach (z.B. Mathematik, Deutsch, Englisch, Physik, Chemie, Sport, Kunst, Biologie, Geschichte, etc.).
+- WICHTIG: Extrahiere unbedingt auch die Lehrkräfte (Lehrer/Lehrerin) und ordne sie den jeweiligen Fächern zu, sofern diese auf dem Bild oder im Text stehen!
 
 Antworte ausschließlich im JSON-Format mit folgendem Schema:
 {

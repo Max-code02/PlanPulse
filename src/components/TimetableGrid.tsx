@@ -663,7 +663,7 @@ export const TimetableGrid: React.FC<TimetableGridProps> = ({
                 className="flex items-center space-x-1 bg-slate-800 hover:bg-rose-950/40 text-slate-400 hover:text-rose-300 text-xs font-medium px-2 py-1.5 rounded-lg border border-slate-700 hover:border-rose-800 transition-colors"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-                <span className="hidden md:inline">Leeren</span>
+                <span className="hidden md:inline">Alles zurücksetzen</span>
               </button>
             )}
 

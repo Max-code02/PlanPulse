@@ -84,12 +84,12 @@ export default function App() {
     if (device === "apple") {
       showToast("🍎 Apple iOS Version ausgewählt. Leite weiter...");
       setTimeout(() => {
-        window.location.href = "/handyappel.html";
+        window.location.href = "/handyapple.html";
       }, 400);
     } else if (device === "android") {
       showToast("🤖 Android Version ausgewählt. Leite weiter...");
       setTimeout(() => {
-        window.location.href = "/handyadriod.html";
+        window.location.href = "/handyandroid.html";
       }, 400);
     } else {
       showToast("💻 PC / Desktop-Ansicht aktiv.");
