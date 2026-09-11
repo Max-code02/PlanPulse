@@ -2763,11 +2763,12 @@ async function startServer() {
 
     // Modern, supported multimodal models with ultra-low latency
     const geminiModels = [
-      "gemini-2.5-flash",
-      "gemini-flash-latest",
+      "gemini-3.6-flash",
+      "gemini-3.7-flash",
       "gemini-3.8-flash",
       "gemini-3.1-flash-lite",
-      "gemini-2.5-pro",
+      "gemini-flash-latest",
+      "gemini-3.8-pro",
     ];
 
     const withTimeout = <T>(promise: Promise<T>, ms = requestTimeoutMs): Promise<T> => {

@@ -96,6 +96,18 @@ export const GradeCalculator: React.FC<GradeCalculatorProps> = ({ entries, onDat
   const [selectedSubjectFilter, setSelectedSubjectFilter] = useState<string>("ALL");
   const [searchSubject, setSearchSubject] = useState("");
   const [hoveredSegment, setHoveredSegment] = useState<string | null>(null);
+
+  // In-app Confirmation Modal State (Reliable across all browser iframes & mobile)
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    description: string;
+    confirmText: string;
+    isDanger?: boolean;
+    onConfirm: () => Promise<void> | void;
+  } | null>(null);
+  const [isPerformingConfirm, setIsPerformingConfirm] = useState(false);
+
   const userExplicitlyClearedSubjectsRef = React.useRef(
     typeof window !== "undefined" && localStorage.getItem("planpulse_subjects_explicitly_cleared") === "true"
   );
@@ -542,25 +554,28 @@ export const GradeCalculator: React.FC<GradeCalculatorProps> = ({ entries, onDat
     }
   };
 
-  const handleDeleteSubject = async (id: string, name: string) => {
-    if (!confirm(`Fach "${name}" wirklich löschen? Die zugehörigen Noten bleiben erhalten.`)) return;
-
+  const executeDeleteSubject = async (id: string) => {
     try {
+      setIsPerformingConfirm(true);
+      const nextSubjects = subjects.filter((s) => s.id !== id);
+      setSubjects(nextSubjects);
+      localStorage.setItem("planpulse_user_subjects", JSON.stringify(nextSubjects));
+      localStorage.setItem("planpulse_saved_subjects", JSON.stringify(nextSubjects));
+      if (nextSubjects.length === 0) {
+        userExplicitlyClearedSubjectsRef.current = true;
+        localStorage.setItem("planpulse_subjects_explicitly_cleared", "true");
+      }
+
       const headers = getHeaders();
       const res = await safeFetchJson(`/api/subjects/${id}`, {
         method: "DELETE",
         headers,
       }).then((r) => r.data);
 
-      let nextSubjects: UserSubject[] = [];
-      if (res?.success && res.subjects) {
-        nextSubjects = res.subjects;
+      if (res?.success && Array.isArray(res.subjects)) {
         setSubjects(res.subjects);
         localStorage.setItem("planpulse_user_subjects", JSON.stringify(res.subjects));
-      } else {
-        nextSubjects = subjects.filter((s) => s.id !== id);
-        setSubjects(nextSubjects);
-        localStorage.setItem("planpulse_user_subjects", JSON.stringify(nextSubjects));
+        localStorage.setItem("planpulse_saved_subjects", JSON.stringify(res.subjects));
       }
 
       if (auth.currentUser) {
@@ -573,16 +588,31 @@ export const GradeCalculator: React.FC<GradeCalculatorProps> = ({ entries, onDat
 
       if (onDataChange) onDataChange();
       window.dispatchEvent(new CustomEvent("planpulse_data_updated", { detail: { subjects: nextSubjects } }));
+      window.dispatchEvent(new CustomEvent("planpulse_subjects_updated", { detail: { subjects: nextSubjects } }));
     } catch (err) {
       console.error("Delete subject error:", err);
+    } finally {
+      setIsPerformingConfirm(false);
+      setConfirmDialog(null);
     }
   };
 
-  const handleResetDefaultSubjects = async () => {
-    if (!confirm("Fächer auf die Standard-Fächerliste zurücksetzen?")) return;
-    userExplicitlyClearedSubjectsRef.current = false;
-    localStorage.removeItem("planpulse_subjects_explicitly_cleared");
+  const handleDeleteSubject = (id: string, name: string) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: `Fach "${name}" entfernen?`,
+      description: `Möchtest du das Fach "${name}" wirklich löschen? Zugehörige Noten in der Notenübersicht bleiben archiviert.`,
+      confirmText: "Fach löschen",
+      isDanger: true,
+      onConfirm: () => executeDeleteSubject(id),
+    });
+  };
+
+  const executeResetDefaultSubjects = async () => {
     try {
+      setIsPerformingConfirm(true);
+      userExplicitlyClearedSubjectsRef.current = false;
+      localStorage.removeItem("planpulse_subjects_explicitly_cleared");
       const res = await safeFetchJson<{ success: boolean; subjects: UserSubject[] }>("/api/subjects/reset", {
         method: "POST",
         headers: getHeaders(),
@@ -591,6 +621,7 @@ export const GradeCalculator: React.FC<GradeCalculatorProps> = ({ entries, onDat
       if (res?.success && res.subjects) {
         setSubjects(res.subjects);
         localStorage.setItem("planpulse_user_subjects", JSON.stringify(res.subjects));
+        localStorage.setItem("planpulse_saved_subjects", JSON.stringify(res.subjects));
         if (auth.currentUser) {
           try {
             const snap = await getDocs(collection(db, `users/${auth.currentUser.uid}/subjects`));
@@ -606,19 +637,35 @@ export const GradeCalculator: React.FC<GradeCalculatorProps> = ({ entries, onDat
         }
         if (onDataChange) onDataChange();
         window.dispatchEvent(new CustomEvent("planpulse_data_updated", { detail: { subjects: res.subjects } }));
+        window.dispatchEvent(new CustomEvent("planpulse_subjects_updated", { detail: { subjects: res.subjects } }));
       }
     } catch (err) {
       console.error("Reset subjects error:", err);
+    } finally {
+      setIsPerformingConfirm(false);
+      setConfirmDialog(null);
     }
   };
 
-  const handleDeleteAllSubjects = async () => {
-    if (!confirm("Alle Fächer restlos löschen? (Kann nicht rückgängig gemacht werden)")) return;
-    userExplicitlyClearedSubjectsRef.current = true;
-    localStorage.setItem("planpulse_subjects_explicitly_cleared", "true");
+  const handleResetDefaultSubjects = () => {
+    setConfirmDialog({
+      isOpen: true,
+      title: "Standard-Fächer wiederherstellen?",
+      description: "Möchtest du die Fächerliste auf die Standard-Fächer (Mathematik, Deutsch, Englisch etc.) zurücksetzen?",
+      confirmText: "Standard-Fächer laden",
+      isDanger: false,
+      onConfirm: executeResetDefaultSubjects,
+    });
+  };
+
+  const executeDeleteAllSubjects = async () => {
     try {
+      setIsPerformingConfirm(true);
+      userExplicitlyClearedSubjectsRef.current = true;
+      localStorage.setItem("planpulse_subjects_explicitly_cleared", "true");
       setSubjects([]);
       localStorage.setItem("planpulse_user_subjects", "[]");
+      localStorage.setItem("planpulse_saved_subjects", "[]");
 
       const res = await safeFetchJson<{ success: boolean; subjects: UserSubject[] }>("/api/subjects/clear", {
         method: "POST",
@@ -642,9 +689,24 @@ export const GradeCalculator: React.FC<GradeCalculatorProps> = ({ entries, onDat
 
       if (onDataChange) onDataChange();
       window.dispatchEvent(new CustomEvent("planpulse_data_updated", { detail: { subjects: [] } }));
+      window.dispatchEvent(new CustomEvent("planpulse_subjects_updated", { detail: { subjects: [] } }));
     } catch (err) {
       console.error("Clear subjects error:", err);
+    } finally {
+      setIsPerformingConfirm(false);
+      setConfirmDialog(null);
     }
+  };
+
+  const handleDeleteAllSubjects = () => {
+    setConfirmDialog({
+      isOpen: true,
+      title: "Alle Fächer restlos löschen?",
+      description: "Möchtest du wirklich alle Schulfächer aus deiner Fächerliste entfernen? Bestehende Noten bleiben erhalten.",
+      confirmText: "Ja, alle Fächer löschen",
+      isDanger: true,
+      onConfirm: executeDeleteAllSubjects,
+    });
   };
 
   // Grade color badges
@@ -1962,8 +2024,71 @@ export const GradeCalculator: React.FC<GradeCalculatorProps> = ({ entries, onDat
           if (onDataChange) onDataChange();
         }}
         existingSubjects={subjects}
-        targetClassDefault="9b"
       />
+
+      {/* ========================================================================= */}
+      {/* MODAL: BESTÄTIGUNGS-DIALOG (IFRAME- & MOBILE-SICHER) */}
+      {/* ========================================================================= */}
+      {confirmDialog?.isOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-150">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-sm p-5 shadow-2xl space-y-4 animate-in zoom-in-95 duration-150">
+            <div className="flex items-start space-x-3">
+              <div
+                className={`p-2.5 rounded-xl ${
+                  confirmDialog.isDanger
+                    ? "bg-rose-500/10 text-rose-400 border border-rose-500/20"
+                    : "bg-blue-500/10 text-blue-400 border border-blue-500/20"
+                }`}
+              >
+                {confirmDialog.isDanger ? (
+                  <Trash2 className="w-5 h-5" />
+                ) : (
+                  <RotateCcw className="w-5 h-5" />
+                )}
+              </div>
+              <div className="flex-1">
+                <h4 className="text-sm font-bold text-white">{confirmDialog.title}</h4>
+                <p className="text-xs text-slate-400 mt-1 leading-relaxed">
+                  {confirmDialog.description}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end space-x-2 pt-2 border-t border-slate-800">
+              <button
+                type="button"
+                disabled={isPerformingConfirm}
+                onClick={() => setConfirmDialog(null)}
+                className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition-colors disabled:opacity-50"
+              >
+                Abbrechen
+              </button>
+              <button
+                type="button"
+                disabled={isPerformingConfirm}
+                onClick={() => confirmDialog.onConfirm()}
+                className={`px-4 py-2 text-white rounded-xl text-xs font-bold shadow-md transition-all flex items-center space-x-1.5 disabled:opacity-50 ${
+                  confirmDialog.isDanger
+                    ? "bg-rose-600 hover:bg-rose-500 shadow-rose-900/20"
+                    : "bg-blue-600 hover:bg-blue-500 shadow-blue-900/20"
+                }`}
+              >
+                {isPerformingConfirm ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <span>Wird ausgeführt...</span>
+                  </>
+                ) : (
+                  <>
+                    {confirmDialog.isDanger && <Trash2 className="w-3.5 h-3.5" />}
+                    <span>{confirmDialog.confirmText}</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
     </div>
   );

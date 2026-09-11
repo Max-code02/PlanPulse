@@ -661,6 +661,7 @@ export async function safeFetchJson<T = any>(
       if (resource === "subjects") {
         if (id === "clear" || (method === "POST" && pathname.endsWith("/clear"))) {
           setLocalItem("planpulse_user_subjects", []);
+          localStorage.setItem("planpulse_subjects_explicitly_cleared", "true");
           if (uid) {
             try {
               const snap = await getDocs(collection(db, `users/${uid}/subjects`));
@@ -674,6 +675,7 @@ export async function safeFetchJson<T = any>(
 
         if (id === "reset" || (method === "POST" && pathname.endsWith("/reset"))) {
           setLocalItem("planpulse_user_subjects", DEFAULT_SUBJECTS);
+          localStorage.removeItem("planpulse_subjects_explicitly_cleared");
           if (uid) {
             try {
               const snap = await getDocs(collection(db, `users/${uid}/subjects`));
@@ -689,9 +691,10 @@ export async function safeFetchJson<T = any>(
         }
 
         if (method === "GET") {
+          const explicitlyCleared = localStorage.getItem("planpulse_subjects_explicitly_cleared") === "true";
           let subjects = getLocalItem<UserSubject[] | null>("planpulse_user_subjects", null);
           if (subjects === null) {
-            subjects = DEFAULT_SUBJECTS;
+            subjects = explicitlyCleared ? [] : DEFAULT_SUBJECTS;
           }
           if (uid) {
             try {
@@ -699,7 +702,7 @@ export async function safeFetchJson<T = any>(
               if (!snap.empty) {
                 subjects = snap.docs.map((d) => d.data() as UserSubject);
                 setLocalItem("planpulse_user_subjects", subjects);
-              } else if (localStorage.getItem("planpulse_user_subjects") === "[]") {
+              } else if (explicitlyCleared || localStorage.getItem("planpulse_user_subjects") === "[]") {
                 subjects = [];
               }
             } catch {}

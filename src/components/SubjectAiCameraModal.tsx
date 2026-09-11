@@ -55,7 +55,7 @@ export const SubjectAiCameraModal: React.FC<SubjectAiCameraModalProps> = ({
   onClose,
   onSubjectsImported,
   existingSubjects = [],
-  targetClassDefault = "9b",
+  targetClassDefault = "",
 }) => {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [imageFileName, setImageFileName] = useState<string>("");
@@ -65,8 +65,8 @@ export const SubjectAiCameraModal: React.FC<SubjectAiCameraModalProps> = ({
   const [extractedList, setExtractedList] = useState<ExtractedSubjectItem[]>([]);
   const [scanSummary, setScanSummary] = useState<string | null>(null);
   const [aiEngineUsed, setAiEngineUsed] = useState<string | null>(null);
-  const [targetClass, setTargetClass] = useState<string>(targetClassDefault || "9b");
-  const [activeTab, setActiveTab] = useState<"camera" | "text" | "preset">("camera");
+  const [targetClass, setTargetClass] = useState<string>(targetClassDefault || "");
+  const [activeTab, setActiveTab] = useState<"camera" | "text">("camera");
   const [manualText, setManualText] = useState<string>("");
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -178,47 +178,6 @@ export const SubjectAiCameraModal: React.FC<SubjectAiCameraModalProps> = ({
     if (clean.toLowerCase().includes("französ")) return "F";
     if (clean.toLowerCase().includes("span")) return "Spa";
     return clean.substring(0, 3).toUpperCase();
-  };
-
-  const handleLoadClass9bPreset = () => {
-    const raw9b = [
-      { name: "Mathematik", teacher: "Bernadette Sicheneder", room: "", code: "M", color: "#2563eb", targetGrade: 2.0, oralRatio: 50 },
-      { name: "Deutsch", teacher: "Jutta Fischer", room: "", code: "D", color: "#dc2626", targetGrade: 2.0, oralRatio: 50 },
-      { name: "Englisch", teacher: "Diana Geck", room: "", code: "E", color: "#7c3aed", targetGrade: 2.0, oralRatio: 50 },
-      { name: "Latein", teacher: "Katharina Weikert", room: "", code: "L", color: "#9333ea", targetGrade: 2.0, oralRatio: 50 },
-      { name: "Physik", teacher: "Kelly Reble, Almuth Schmitter", room: "", code: "Ph", color: "#0891b2", targetGrade: 2.0, oralRatio: 50 },
-      { name: "Chemie", teacher: "Dr. Kai Konrad, Anne Katrin Baum", room: "", code: "Ch", color: "#059669", targetGrade: 2.0, oralRatio: 50 },
-      { name: "Biologie", teacher: "Dr. Kai Konrad", room: "", code: "Bio", color: "#16a34a", targetGrade: 2.0, oralRatio: 50 },
-      { name: "Geschichte", teacher: "Dr. Rainer Bach", room: "", code: "G", color: "#d97706", targetGrade: 2.0, oralRatio: 50 },
-      { name: "Informatik", teacher: "Dr. Iljana Zähle", room: "", code: "Inf", color: "#6366f1", targetGrade: 2.0, oralRatio: 50 },
-      { name: "Wirtschaft und Recht", teacher: "Bernhard Ruhl", room: "", code: "WR", color: "#0d9488", targetGrade: 2.0, oralRatio: 50 },
-      { name: "Wirtschaftsinformatik", teacher: "Bernhard Ruhl", room: "", code: "WInf", color: "#0284c7", targetGrade: 2.0, oralRatio: 50 },
-      { name: "Evang. Religionslehre", teacher: "Martina Steubing-Nickel", room: "", code: "EvRel", color: "#0284c7", targetGrade: 2.0, oralRatio: 50 },
-      { name: "Kath. Religionslehre", teacher: "Amélie Mozaffarin", room: "", code: "KRel", color: "#0284c7", targetGrade: 2.0, oralRatio: 50 },
-      { name: "Ethik", teacher: "Beate Hofstetter", room: "", code: "Eth", color: "#0284c7", targetGrade: 2.0, oralRatio: 50 },
-      { name: "Kunst", teacher: "Dorette Jansen", room: "", code: "Ku", color: "#ec4899", targetGrade: 2.0, oralRatio: 50 },
-      { name: "Musik", teacher: "Christine Gaillard", room: "", code: "Mu", color: "#8b5cf6", targetGrade: 2.0, oralRatio: 50 },
-      { name: "Sport", teacher: "Jana Stark, Jochen Hassel", room: "", code: "Sp", color: "#ea580c", targetGrade: 2.0, oralRatio: 50 },
-    ];
-
-    const items: ExtractedSubjectItem[] = raw9b.map((s, idx) => ({
-      id: `preset-9b-${idx}-${Date.now()}`,
-      name: s.name,
-      code: s.code,
-      teacher: s.teacher,
-      room: s.room,
-      color: s.color,
-      targetGrade: s.targetGrade,
-      oralRatio: s.oralRatio,
-      selected: true,
-    }));
-
-    setExtractedList(items);
-    setScanSummary("✨ 17 Fächer & Lehrkräfte für Klasse 9b erfolgreich geladen!");
-    setScanError(null);
-    try {
-      confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
-    } catch {}
   };
 
   const handleStartScan = async () => {
@@ -439,8 +398,9 @@ export const SubjectAiCameraModal: React.FC<SubjectAiCameraModalProps> = ({
         }
       }
 
-      // Persist to localStorage
+      // Persist to all localStorage caches used across the app
       localStorage.setItem("planpulse_saved_subjects", JSON.stringify(mergedSubjects));
+      localStorage.setItem("planpulse_user_subjects", JSON.stringify(mergedSubjects));
       localStorage.setItem("planpulse_subjects_timestamp", Date.now().toString());
       localStorage.removeItem("planpulse_subjects_explicitly_cleared");
 
@@ -456,7 +416,10 @@ export const SubjectAiCameraModal: React.FC<SubjectAiCameraModalProps> = ({
     } catch (saveErr) {
       console.error("Error saving imported subjects:", saveErr);
       // Still apply locally even if network fails
+      localStorage.setItem("planpulse_saved_subjects", JSON.stringify(mergedSubjects));
+      localStorage.setItem("planpulse_user_subjects", JSON.stringify(mergedSubjects));
       onSubjectsImported(mergedSubjects);
+      window.dispatchEvent(new CustomEvent("planpulse_subjects_updated", { detail: { subjects: mergedSubjects } }));
       onClose();
     }
   };
@@ -546,22 +509,6 @@ export const SubjectAiCameraModal: React.FC<SubjectAiCameraModalProps> = ({
             >
               <BookOpen className="w-3.5 h-3.5" />
               <span>Text / Liste einfügen</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setActiveTab("preset");
-                setScanError(null);
-                handleLoadClass9bPreset();
-              }}
-              className={`flex-1 py-2 px-3 rounded-lg font-bold text-xs flex items-center justify-center space-x-1.5 transition-all ${
-                activeTab === "preset"
-                  ? "bg-emerald-600 text-white shadow"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-slate-900"
-              }`}
-            >
-              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>1-Klick Klasse 9b</span>
             </button>
           </div>
 
@@ -690,29 +637,6 @@ export const SubjectAiCameraModal: React.FC<SubjectAiCameraModalProps> = ({
                   <span>Text mit KI strukturieren & Fächer anlegen</span>
                 </button>
               )}
-            </div>
-          )}
-
-          {/* TAB 3: Class 9b Preset Mode */}
-          {activeTab === "preset" && extractedList.length === 0 && (
-            <div className="p-4 bg-slate-950 border border-emerald-900/50 rounded-xl text-center space-y-3">
-              <div className="w-10 h-10 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto">
-                <Sparkles className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="font-bold text-white text-sm">Vorlage für Klasse 9b (Gymnasium)</h4>
-                <p className="text-slate-400 text-xs mt-1">
-                  17 Schulfächer mit zugeordneten Lehrkräften (Sicheneder, Fischer, Geck, Weikert, Konrad, Reble, Bach, Ruhl, etc.)
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={handleLoadClass9bPreset}
-                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs shadow-md inline-flex items-center space-x-1.5"
-              >
-                <Check className="w-4 h-4" />
-                <span>17 Fächer für 9b jetzt laden</span>
-              </button>
             </div>
           )}
 
