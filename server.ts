@@ -2763,9 +2763,11 @@ async function startServer() {
 
     // Modern, supported multimodal models with ultra-low latency
     const geminiModels = [
+      "gemini-2.5-flash",
+      "gemini-flash-latest",
       "gemini-3.8-flash",
       "gemini-3.1-flash-lite",
-      "gemini-flash-latest",
+      "gemini-2.5-pro",
     ];
 
     const withTimeout = <T>(promise: Promise<T>, ms = requestTimeoutMs): Promise<T> => {
@@ -2792,10 +2794,20 @@ async function startServer() {
           console.log(`[Multi-AI] Attempting Engine: ${simulatedEngineName} (Model: ${model})...`);
           cascadeLog.push({ engine: simulatedEngineName, model, status: "attempting" });
           
+          // Construct valid contents payload for @google/genai
+          let finalContents: any;
+          if (contentsPayload && typeof contentsPayload === "object" && Array.isArray(contentsPayload.parts)) {
+            finalContents = contentsPayload.parts;
+          } else if (contentsPayload && typeof contentsPayload === "object" && contentsPayload.inlineData) {
+            finalContents = [contentsPayload, rawText || "Analysiere dieses Bild."];
+          } else {
+            finalContents = contentsPayload;
+          }
+
           const response = await withTimeout(
             aiInstance.models.generateContent({
               model,
-              contents: contentsPayload,
+              contents: finalContents,
               config: isJson
                 ? {
                     systemInstruction,
