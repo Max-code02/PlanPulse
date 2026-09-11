@@ -1,0 +1,24 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "users": {
+      "$uid": {
+        ".read": "auth != null && (auth.uid === $uid || auth.token.email === 'max.kistner12@gmail.com' || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+        ".write": "auth != null && (auth.uid === $uid || auth.token.email === 'max.kistner12@gmail.com' || root.child('users').child(auth.uid).child('role').val() === 'admin')"
+      }
+    },
+    "school_templates": {
+      ".read": true,
+      ".write": "auth != null"
+    },
+    "registered_schools": {
+      ".read": true,
+      ".write": "auth != null"
+    },
+    "schools": {
+      ".read": true,
+      ".write": "auth != null"
+    }
+  }
+}
