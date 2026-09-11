@@ -549,6 +549,22 @@ export const GradeCalculator: React.FC<GradeCalculatorProps> = ({ entries, onDat
     }
   };
 
+  const handleDeleteAllSubjects = async () => {
+    if (!confirm("Alle Fächer restlos löschen? (Kann nicht rückgängig gemacht werden)")) return;
+    try {
+      const res = await safeFetchJson("/api/subjects/clear", {
+        method: "POST",
+        headers: getHeaders(),
+      }).then((r) => r.data);
+      if (res.success && res.subjects !== undefined) {
+        setSubjects(res.subjects);
+        if (onDataChange) onDataChange();
+      }
+    } catch (err) {
+      console.error("Clear subjects error:", err);
+    }
+  };
+
   // Grade color badges
   const getGradeColorBadge = (val: number) => {
     if (val <= 1.5) return "bg-emerald-500/20 text-emerald-300 border-emerald-500/40";
@@ -1321,6 +1337,14 @@ export const GradeCalculator: React.FC<GradeCalculatorProps> = ({ entries, onDat
             </div>
 
             <div className="flex items-center space-x-2">
+              <button
+                onClick={handleDeleteAllSubjects}
+                className="flex items-center space-x-1 px-3 py-2 bg-red-950/40 hover:bg-red-900/50 text-red-400 rounded-xl text-xs font-semibold border border-red-900/50 transition-colors"
+                title="Alle Fächer löschen"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Alle löschen</span>
+              </button>
               <button
                 onClick={handleResetDefaultSubjects}
                 className="flex items-center space-x-1 px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold border border-slate-700 transition-colors"

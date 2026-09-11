@@ -2168,7 +2168,7 @@ async function startServer() {
   // Subjects Management API (Fächer verwalten & Farbsynchronisation)
   app.get("/api/subjects", (req, res) => {
     const { data } = getContext(req);
-    if (!data.userSubjects || data.userSubjects.length === 0) {
+    if (!data.userSubjects ) {
       data.userSubjects = [...DEFAULT_SUBJECTS];
     }
     res.json({ success: true, subjects: data.userSubjects });
@@ -2313,6 +2313,14 @@ async function startServer() {
     if (user) user.userSubjects = data.userSubjects;
     saveDatabase();
     res.json({ success: true, subjects: data.userSubjects });
+  });
+
+  app.post("/api/subjects/clear", (req, res) => {
+    const { user, data } = getContext(req);
+    data.userSubjects = [];
+    if (user) user.userSubjects = [];
+    saveDatabase();
+    res.json({ success: true, subjects: [] });
   });
 
   // School Registry API
@@ -2899,7 +2907,7 @@ Antworte ausschließlich im JSON-Format mit folgendem Schema:
       }
 
       // Initialize subjects if empty
-      if (!data.userSubjects || data.userSubjects.length === 0) {
+      if (!data.userSubjects ) {
         data.userSubjects = [...DEFAULT_SUBJECTS];
       }
 
