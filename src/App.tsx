@@ -25,7 +25,7 @@ import {
 } from "./types";
 import { safeFetchJson } from "./lib/api";
 import { db, auth } from "./lib/firebase";
-import { doc, setDoc, deleteDoc, writeBatch, collection, getDocs } from "firebase/firestore";
+import { doc, setDoc, deleteDoc, writeBatch, collection, getDocs, getDoc, onSnapshot } from "firebase/firestore";
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("timetable");
@@ -167,7 +167,6 @@ export default function App() {
         };
 
         try {
-          const { getDoc, doc } = await import("firebase/firestore");
           const snap = await getDoc(doc(db, "users", fbUser.uid));
           if (snap.exists()) {
             const data = snap.data();
@@ -176,7 +175,6 @@ export default function App() {
               userObj.role = "admin";
             }
           } else {
-            const { setDoc } = await import("firebase/firestore");
             await setDoc(doc(db, "users", fbUser.uid), userObj, { merge: true });
           }
         } catch (e) {
@@ -244,7 +242,6 @@ export default function App() {
         try {
           await auth.authStateReady();
           if (auth.currentUser) {
-            const { getDoc, getDocs, collection, doc } = await import("firebase/firestore");
             const snap = await getDocs(collection(db, `users/${auth.currentUser.uid}/timetable`));
             fbTimetable = snap.docs.map(d => d.data() as TimetableEntry);
             
@@ -286,8 +283,6 @@ export default function App() {
 
     const setupRealtimeListeners = async () => {
       try {
-        const { collection, doc, onSnapshot } = await import("firebase/firestore");
-
         // 1. Live Timetable listener
         unsubTimetable = onSnapshot(
           collection(db, `users/${uid}/timetable`),
@@ -468,7 +463,6 @@ export default function App() {
         
         if (auth.currentUser) {
           try {
-            const { getDocs, collection, writeBatch } = await import("firebase/firestore");
             const snap = await getDocs(collection(db, `users/${auth.currentUser.uid}/timetable`));
             const batch = writeBatch(db);
             snap.docs.forEach((d) => {
@@ -498,7 +492,6 @@ export default function App() {
 
         if (auth.currentUser) {
           try {
-            const { getDocs, collection, writeBatch } = await import("firebase/firestore");
             const snap = await getDocs(collection(db, `users/${auth.currentUser.uid}/timetable`));
             const batch = writeBatch(db);
             snap.docs.forEach((d) => batch.delete(d.ref));
@@ -593,7 +586,6 @@ export default function App() {
       // Sync to Firebase if logged in
       if (auth.currentUser) {
         try {
-          const { writeBatch, doc } = await import("firebase/firestore");
           const batch = writeBatch(db);
           newEntries.forEach((entry: any) => {
             const docRef = doc(db, `users/${auth.currentUser!.uid}/timetable`, entry.id);
@@ -611,7 +603,6 @@ export default function App() {
       localStorage.setItem("planpulse_user_subjects", JSON.stringify(parsedData.allSubjects));
       if (auth.currentUser) {
         try {
-          const { writeBatch, doc } = await import("firebase/firestore");
           const batch = writeBatch(db);
           parsedData.allSubjects.forEach((sub: any) => {
             const docRef = doc(db, `users/${auth.currentUser!.uid}/subjects`, sub.id);
