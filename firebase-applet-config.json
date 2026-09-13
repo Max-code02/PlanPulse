@@ -1,12 +1,13 @@
 {
-  "projectId": "intense-environs-8f6jr",
-  "appId": "1:1095465910331:web:5fb582cc848cad0b5d9c1e",
-  "apiKey": "AIzaSyB4Nt2NoYao9rlPTVZDPy_zC9T0EEyGxBY",
-  "authDomain": "intense-environs-8f6jr.firebaseapp.com",
-  "firestoreDatabaseId": "ai-studio-planpulsestunden-8eb0b310-a277-4dc3-8b88-27ae7759216e",
-  "storageBucket": "intense-environs-8f6jr.firebasestorage.app",
-  "messagingSenderId": "1095465910331",
-  "measurementId": "",
-  "oAuthClientId": "1095465910331-ncvs2hfctvdk2dlmfrrn6olm7i9p34ra.apps.googleusercontent.com",
+  "projectId": "planpluse",
+  "appId": "1:803662906703:web:90d23e1328303be6e0b13a",
+  "apiKey": "AIzaSyDPPvJvBrDbt-DALu9eW_a34EsX5hcsV_U",
+  "authDomain": "planpluse.firebaseapp.com",
+  "databaseURL": "https://planpluse-default-rtdb.europe-west1.firebasedatabase.app",
+  "firestoreDatabaseId": "(default)",
+  "storageBucket": "planpluse.firebasestorage.app",
+  "messagingSenderId": "803662906703",
+  "measurementId": "G-DYRPQD8T7B",
+  "oAuthClientId": "",
   "recaptchaSiteKey": ""
 }
